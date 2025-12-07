@@ -2,6 +2,8 @@
 
 A web-based Named Entity Recognition (NER) annotation tool for labeling and annotating text data for your local machine. TokeNER provides an intuitive interface for highlighting text segments and assigning custom labels, making it perfect for dataset preparation, NER training data creation, and text analysis. We've made this open source to handle the problem with PHI concerns to health-related data as well as foster tools for the open-soruce community!
 
+![TokeNER Demo](demo.png)
+
 ## Citation
 
 If you use TokeNER in your research or project, please cite it as:
