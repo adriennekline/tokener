@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TokeNER</title>
+    <style>
+      /* Reset and Global Styles */
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: Arial, sans-serif;
+        background-image: url("banner.png"); /* Ensure 'banner.png' is in the correct path */
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-position: center center;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+      }
+
+      /* Header Styles */
+      header {
+        background-color: #16b4a4;
+        color: #fff;
+        padding: 20px;
+        text-align: center;
+        position: relative;
+      }
+
+      /* Logo Styles */
+      .logo {
+        position: absolute;
+        left: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        height: 50px;
+        width: auto;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 2em;
+      }
+
+      /* Container Layout */
+      .container {
+        display: flex;
+        flex: 1;
+        padding: 20px;
+        gap: 20px;
+      }
+
+      /* Left Sidebar: Notes List */
+      .sidebar-left {
+        width: 25%;
+        background-color: rgba(68, 68, 68, 0.9);
+        color: #fff;
+        padding: 15px;
+        border-radius: 8px;
+        overflow-y: auto;
+      }
+
+      .sidebar-left h2 {
+        margin-bottom: 15px;
+        text-align: center;
+        color: #fff;
+      }
+
+      .file-input {
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      .file-input input[type="file"] {
+        display: none;
+      }
+
+      .file-input label {
+        background-color: #28a745;
+        color: #fff;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+
+      .file-input label:hover {
+        background-color: #218838;
+      }
+
+      .note-list {
+        list-style: none;
+        padding: 0;
+      }
+
+      .note-list li {
+        padding: 10px;
+        margin-bottom: 10px;
+        background-color: #555;
+        border-radius: 5px;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: background-color 0.3s;
+      }
+
+      .note-list li:hover {
+        background-color: #666;
+      }
+
+      .note-list li.active {
+        background-color: #007bff;
+      }
+
+      .note-list li.annotated::after {
+        content: "✔";
+        color: #28a745;
+        font-weight: bold;
+        margin-left: 10px;
+      }
+
+      /* Main Content Area */
+      .main-content {
+        flex: 2;
+        background-color: rgba(205, 241, 238, 0.9);
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .row-indicator {
+        margin-bottom: 10px;
+        font-weight: bold;
+        color: #333;
+      }
+
+      /* Navigation Buttons */
+      .navigation-buttons {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+
+      .navigation-buttons button {
+        flex: 1;
+        padding: 10px;
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+        font-size: 16px;
+      }
+
+      .navigation-buttons button:disabled {
+        background-color: #6c757d;
+        cursor: not-allowed;
+      }
+
+      .navigation-buttons button:hover:not(:disabled) {
+        background-color: #0056b3;
+      }
+
+      #text-display {
+        flex: 1;
+        padding: 15px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        font-family: "Courier New", Courier, monospace;
+        position: relative;
+        background-color: #ffffff;
+      }
+
+      /* Highlight Class */
+      #text-display .highlight {
+        padding: 2px 4px;
+        border-radius: 3px;
+        cursor: pointer;
+        opacity: 0.7;
+        display: inline;
+        position: relative;
+      }
+
+      /* Annotation Toolbar */
+      .annotation-toolbar {
+        margin-top: 10px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .annotation-toolbar .label-container {
+        position: relative;
+        display: inline-block;
+      }
+
+      .annotation-toolbar .remove-label {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background: rgba(0, 0, 0, 0.7);
+        color: #fff;
+        border-radius: 50%;
+        width: 16px;
+        height: 16px;
+        text-align: center;
+        line-height: 14px;
+        font-size: 12px;
+        cursor: pointer;
+        z-index: 2;
+      }
+
+      .annotation-toolbar button.label-button {
+        padding: 8px 12px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        color: #fff;
+        transition: background-color 0.3s;
+        font-size: 14px;
+        position: relative;
+        z-index: 1;
+      }
+
+      /* Predefined Labels */
+      .DATE {
+        background-color: #4ecdc4;
+      }
+
+      .NAME {
+        background-color: #de6312;
+      }
+
+      .LOCATION {
+        background-color: #ffcc00;
+        color: #333;
+      }
+
+      /* Right Sidebar: Annotations List and Add Label */
+      .sidebar-right {
+        width: 25%;
+        background-color: rgba(68, 68, 68, 0.9);
+        color: #fff;
+        padding: 15px;
+        border-radius: 8px;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+      }
+
+      .sidebar-right h2 {
+        margin-bottom: 15px;
+        text-align: center;
+        color: #fff;
+      }
+
+      /* Add Label Section */
+      #add-label-container {
+        background-color: #fff;
+        color: #333;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+        text-align: center;
+      }
+
+      #add-label-container h2 {
+        margin-bottom: 10px;
+        font-size: 18px;
+        color: #333;
+      }
+
+      /* Flexbox for Inputs */
+      .add-label-inputs {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+      }
+
+      #add-label-container input[type="text"] {
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        width: 80%;
+      }
+
+      /* Enhanced Color Selector Styling */
+      #add-label-container .color-input-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        justify-content: center;
+      }
+
+      #add-label-container input[type="color"] {
+        border: none;
+        width: 30px;
+        height: 30px;
+        cursor: pointer;
+        border-radius: 4px;
+      }
+
+      /* Add Label Button */
+      #add-label-container .color-input-wrapper button {
+        padding: 8px 12px;
+        background-color: #28a745;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+        font-size: 14px;
+      }
+
+      #add-label-container .color-input-wrapper button:hover {
+        background-color: #218838;
+      }
+
+      /* Annotations List */
+      #annotations-section {
+        flex: 1;
+        background-color: #ffffff;
+        color: #333;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+        overflow-y: auto;
+      }
+
+      #annotations-section h2 {
+        margin-bottom: 10px;
+        text-align: center;
+        color: #333;
+      }
+
+      .annotation {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: #f8f9fa;
+        padding: 8px;
+        border-radius: 5px;
+        margin-bottom: 10px;
+        box-shadow: 0 0 3px rgba(0, 0, 0, 0.1);
+      }
+
+      .annotation span {
+        flex: 1;
+        margin-right: 10px;
+        font-size: 14px;
+        word-break: break-all;
+      }
+
+      .annotation button {
+        padding: 5px 10px;
+        background-color: #dc3545;
+        color: #fff;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+        font-size: 12px;
+      }
+
+      .annotation button:hover {
+        background-color: #c82333;
+      }
+
+      /* Download Button */
+      .download-btn {
+        margin-top: 20px;
+        padding: 12px 0;
+        background-color: #17a2b8;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background-color 0.3s;
+        text-align: center;
+      }
+
+      .download-btn:disabled {
+        background-color: #6c757d;
+        cursor: not-allowed;
+      }
+
+      .download-btn:hover:not(:disabled) {
+        background-color: #138496;
+      }
+
+      /* New Styles for Filename Input */
+      #filename-container {
+        text-align: center;
+        margin: 10px 0;
+      }
+
+      #filename-input {
+        padding: 8px;
+        width: 60%;
+        max-width: 300px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
+
+      /* Scrollbar Styling */
+      .sidebar-left::-webkit-scrollbar,
+      .sidebar-right::-webkit-scrollbar,
+      .main-content::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      .sidebar-left::-webkit-scrollbar-track,
+      .sidebar-right::-webkit-scrollbar-track,
+      .main-content::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+      }
+
+      .sidebar-left::-webkit-scrollbar-thumb,
+      .sidebar-right::-webkit-scrollbar-thumb,
+      .main-content::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 4px;
+      }
+
+      .sidebar-left::-webkit-scrollbar-thumb:hover,
+      .sidebar-right::-webkit-scrollbar-thumb:hover,
+      .main-content::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+      }
+
+      /* Responsive Design */
+      @media (max-width: 1200px) {
+        .container {
+          flex-direction: column;
+        }
+
+        .sidebar-left,
+        .sidebar-right,
+        .main-content {
+          width: 100%;
+          height: auto;
+        }
+
+        /* Adjust logo position for smaller screens */
+        .logo {
+          position: static;
+          transform: none;
+          margin-bottom: 10px;
+        }
+
+        header {
+          text-align: center;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .annotation-toolbar {
+          flex-direction: column;
+          margin-bottom: 10px;
+        }
+
+        .annotation-toolbar button {
+          width: 100%;
+        }
+
+        .add-label-inputs {
+          width: 100%;
+        }
+
+        #add-label-container input[type="text"] {
+          width: 90%;
+        }
+
+        /* Adjust button size on smaller screens */
+        #add-label-container .color-input-wrapper button {
+          padding: 6px 10px;
+          font-size: 12px;
+        }
+      }
+
+      /* Additional Styles for Overlapping Annotations */
+      #text-display {
+        position: relative;
+      }
+
+      #text-display .highlight {
+        position: relative;
+        display: inline;
+      }
+
+      /* Footer Styles */
+      footer {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 5px;
+        padding: 10px 20px;
+        background-color: #1ab0a1;
+        color: #fff;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Header with Logo -->
+    <header>
+      <img src="logo.png" alt="TokeNER Logo" class="logo" />
+      <h1>TokeNER</h1>
+    </header>
+
+    <div class="container">
+      <!-- Left Sidebar: Notes List -->
+      <div class="sidebar-left">
+        <h2>Notes</h2>
+        <div class="file-input">
+          <input type="file" id="fileInput" accept=".csv, .txt" />
+          <label for="fileInput">Choose CSV or Text File</label>
+        </div>
+        <ul id="noteList" class="note-list"></ul>
+      </div>
+
+      <!-- Main Content Area: Note Display -->
+      <div class="main-content">
+        <div class="row-indicator" id="rowIndicator">
+          Select a note to begin
+        </div>
+        <div class="navigation-buttons">
+          <button id="prevBtn" disabled>Previous</button>
+          <button id="nextBtn" disabled>Next</button>
+        </div>
+        <div id="text-display">No note selected.</div>
+
+        <!-- New Filename Input Container -->
+        <div id="filename-container">
+          <input
+            type="text"
+            id="filename-input"
+            placeholder="Enter filename (e.g., my_annotations.json)"
+          />
+        </div>
+
+        <button id="downloadBtn" class="download-btn" disabled>
+          Download Annotations (JSON)
+        </button>
+      </div>
+
+      <!-- Right Sidebar: Annotations and Add Label -->
+      <div class="sidebar-right">
+        <!-- Annotation Toolbar (Label List) -->
+        <div class="annotation-toolbar" id="annotationToolbar">
+          <button class="label-button DATE">DATE</button>
+          <button class="label-button NAME">NAME</button>
+          <button class="label-button LOCATION">LOCATION</button>
+          <!-- Custom labels will be appended here -->
+        </div>
+
+        <!-- Add Label Section -->
+        <div id="add-label-container">
+          <h2>Add Custom Label</h2>
+          <div class="add-label-inputs">
+            <input
+              type="text"
+              id="custom-label-name"
+              placeholder="Label Name"
+            />
+            <div class="color-input-wrapper">
+              <label for="custom-label-color" style="font-size: 14px"
+                >Color:</label
+              >
+              <input type="color" id="custom-label-color" value="#888888" />
+              <button id="add-label-button">Add Label</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Annotations List -->
+        <div id="annotations-section">
+          <h2>Annotations</h2>
+          <div id="annotations">
+            <p>No annotations for this note.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+      <span>&copy; 2025</span>
+      <a
+        href="https://xtasis.com"
+        target="_blank"
+        style="color: #fff; text-decoration: underline"
+        >Xtasis Inc.</a
+      >
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+      // DOM Elements
+      const fileInput = document.getElementById("fileInput");
+      const noteList = document.getElementById("noteList");
+      const rowIndicator = document.getElementById("rowIndicator");
+      const textDisplay = document.getElementById("text-display");
+      const prevBtn = document.getElementById("prevBtn");
+      const nextBtn = document.getElementById("nextBtn");
+      const downloadBtn = document.getElementById("downloadBtn");
+      const annotationToolbar = document.getElementById("annotationToolbar");
+      const addLabelButton = document.getElementById("add-label-button");
+      const customLabelName = document.getElementById("custom-label-name");
+      const customLabelColor = document.getElementById("custom-label-color");
+      const annotationsDiv = document.getElementById("annotations");
+      const filenameInput = document.getElementById("filename-input"); // New Element
+
+      // Data Structures
+      let originalNotes = [];
+      let notes = [];
+      let annotations = {};
+      let currentIndex = -1;
+      let customLabels = {};
+
+      // Utility Functions
+      function getContrastYIQ(hexcolor) {
+        hexcolor = hexcolor.replace("#", "");
+        let r, g, b;
+        if (hexcolor.length === 3) {
+          r = parseInt(hexcolor[0] + hexcolor[0], 16);
+          g = parseInt(hexcolor[1] + hexcolor[1], 16);
+          b = parseInt(hexcolor[2] + hexcolor[2], 16);
+        } else {
+          r = parseInt(hexcolor.substr(0, 2), 16);
+          g = parseInt(hexcolor.substr(2, 2), 16);
+          b = parseInt(hexcolor.substr(4, 2), 16);
+        }
+        const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+        return yiq >= 128 ? "#000" : "#fff";
+      }
+
+      function escapeHtml(text) {
+        const map = {
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#039;",
+        };
+        return text.replace(/[&<>"']/g, function (m) {
+          return map[m];
+        });
+      }
+
+      // File Upload Handler
+      fileInput.addEventListener("change", function (event) {
+        const file = event.target.files[0];
+        if (!file) {
+          alert("No file selected.");
+          return;
+        }
+
+        const validTypes = ["text/csv", "text/plain"];
+        if (!validTypes.includes(file.type)) {
+          alert("Please upload a valid CSV or Text file.");
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          const content = e.target.result;
+          if (file.type === "text/csv") {
+            parseCSV(content);
+          } else if (file.type === "text/plain") {
+            parseText(content);
+          } else {
+            alert("Unsupported file type.");
+          }
+        };
+        reader.readAsText(file);
+      });
+
+      // Parse CSV File
+      function parseCSV(data) {
+        resetData();
+
+        const lines = data
+          .split(/\r\n|\n/)
+          .filter((line) => line.trim() !== "");
+        lines.forEach((line) => {
+          originalNotes.push(line);
+          notes.push(line);
+        });
+
+        if (notes.length > 0) {
+          displayNotes();
+        } else {
+          alert("The CSV file is empty.");
+        }
+      }
+
+      // Parse Text File
+      function parseText(data) {
+        resetData();
+        const cleanedText = data.trim();
+        if (cleanedText.length > 0) {
+          originalNotes.push(cleanedText);
+          notes.push(cleanedText);
+          displayNotes();
+        } else {
+          alert("The Text file is empty.");
+        }
+      }
+
+      // Reset Data
+      function resetData() {
+        originalNotes = [];
+        notes = [];
+        annotations = {};
+        currentIndex = -1;
+        textDisplay.innerHTML = "No note selected.";
+        rowIndicator.textContent = "Select a note to begin";
+        noteList.innerHTML = "";
+        prevBtn.disabled = true;
+        nextBtn.disabled = true;
+        downloadBtn.disabled = true;
+        filenameInput.value = ""; // Reset filename input
+      }
+
+      // Display Notes in Sidebar
+      function displayNotes() {
+        noteList.innerHTML = "";
+        notes.forEach((note, index) => {
+          const li = document.createElement("li");
+          li.textContent = `Note ${index + 1}: ${truncateText(note, 20)}`;
+          li.dataset.index = index;
+
+          // Add 'annotated' class if annotations exist
+          if (annotations[index] && annotations[index].length > 0) {
+            li.classList.add("annotated");
+          }
+
+          // Click Event to Select Note
+          li.addEventListener("click", () => selectNote(index));
+          noteList.appendChild(li);
+        });
+      }
+
+      // Truncate Text Helper
+      function truncateText(text, maxLength) {
+        return text.length > maxLength
+          ? text.substring(0, maxLength) + "..."
+          : text;
+      }
+
+      // Select a Note
+      function selectNote(index) {
+        currentIndex = index;
+        rowIndicator.textContent = `Note ${currentIndex + 1} of ${
+          notes.length
+        }`;
+        highlightActiveNote();
+        renderAnnotations();
+        renderText();
+        updateNavigationButtons();
+        downloadBtn.disabled = !(
+          annotations[currentIndex] && annotations[currentIndex].length > 0
+        );
+      }
+
+      // Highlight Active Note in Sidebar
+      function highlightActiveNote() {
+        Array.from(noteList.children).forEach((li) => {
+          li.classList.remove("active");
+          if (parseInt(li.dataset.index) === currentIndex) {
+            li.classList.add("active");
+          }
+        });
+      }
+
+      // Update Navigation Buttons
+      function updateNavigationButtons() {
+        prevBtn.disabled = currentIndex <= 0;
+        nextBtn.disabled = currentIndex >= notes.length - 1;
+      }
+
+      // Predefined Labels and Their Colors
+      const predefinedLabels = {
+        DATE: "#4ecdc4",
+        NAME: "#de6312",
+        LOCATION: "#ffcc00",
+      };
+
+      // Insert Annotation in Sorted Order with Merging
+      function insertAnnotationSorted(noteIndex, newAnn) {
+        const annArray = annotations[noteIndex];
+        const sameLabelAnns = annArray.filter(
+          (ann) => ann.label === newAnn.label
+        );
+
+        // Find annotations to merge (overlapping or adjacent)
+        const overlappingAnns = sameLabelAnns.filter(
+          (ann) =>
+            !(
+              newAnn.end_idx < ann.start_idx - 1 ||
+              newAnn.start_idx > ann.end_idx + 1
+            )
+        );
+
+        if (overlappingAnns.length > 0) {
+          // Determine the merged range
+          const mergedStart = Math.min(
+            newAnn.start_idx,
+            ...overlappingAnns.map((ann) => ann.start_idx)
+          );
+          const mergedEnd = Math.max(
+            newAnn.end_idx,
+            ...overlappingAnns.map((ann) => ann.end_idx)
+          );
+
+          // Remove the overlapping annotations
+          annotations[noteIndex] = annArray.filter(
+            (ann) =>
+              !(
+                ann.label === newAnn.label &&
+                !(
+                  newAnn.end_idx < ann.start_idx - 1 ||
+                  newAnn.start_idx > ann.end_idx + 1
+                )
+              )
+          );
+
+          // Create the merged annotation
+          const mergedAnnotation = {
+            label: newAnn.label,
+            color: newAnn.color,
+            start_idx: mergedStart,
+            end_idx: mergedEnd,
+            text: notes[noteIndex].substring(mergedStart, mergedEnd),
+          };
+
+          // Insert the merged annotation in sorted order
+          let inserted = false;
+          for (let i = 0; i < annotations[noteIndex].length; i++) {
+            if (
+              mergedAnnotation.start_idx < annotations[noteIndex][i].start_idx
+            ) {
+              annotations[noteIndex].splice(i, 0, mergedAnnotation);
+              inserted = true;
+              break;
+            }
+          }
+          if (!inserted) {
+            annotations[noteIndex].push(mergedAnnotation);
+          }
+        } else {
+          // No overlapping annotations, insert normally
+          let inserted = false;
+          for (let i = 0; i < annArray.length; i++) {
+            if (newAnn.start_idx < annArray[i].start_idx) {
+              annArray.splice(i, 0, newAnn);
+              inserted = true;
+              break;
+            }
+          }
+          if (!inserted) {
+            annArray.push(newAnn);
+          }
+        }
+      }
+
+      // Handle Label Assignment and Removal via Annotation Toolbar
+      annotationToolbar.addEventListener("click", function (event) {
+        // Handle label assignment
+        if (event.target.classList.contains("label-button")) {
+          const label = event.target.textContent;
+          const color = predefinedLabels[label] || customLabels[label];
+          if (!color) {
+            alert("Label color not found.");
+            return;
+          }
+
+          const selection = window.getSelection();
+          if (selection.rangeCount > 0) {
+            const range = selection.getRangeAt(0);
+            const selectedText = selection.toString();
+            if (selectedText.trim()) {
+              const { start, end } = getSelectionIndices(range);
+
+              // Validate selection range
+              if (
+                start >= 0 &&
+                end <= notes[currentIndex].length &&
+                start < end
+              ) {
+                const annotation = {
+                  label: label,
+                  color: color,
+                  start_idx: start,
+                  end_idx: end,
+                  text: notes[currentIndex].substring(start, end),
+                };
+
+                if (!annotations[currentIndex]) {
+                  annotations[currentIndex] = [];
+                }
+
+                // Insert annotation with merging
+                insertAnnotationSorted(currentIndex, annotation);
+                renderAnnotations();
+                renderText();
+
+                // Mark note as annotated
+                const li = noteList.querySelector(
+                  `li[data-index='${currentIndex}']`
+                );
+                if (li) {
+                  li.classList.add("annotated");
+                }
+
+                // Clear selection
+                selection.removeAllRanges();
+                downloadBtn.disabled = false;
+              } else {
+                alert("Invalid selection range. Please try again.");
+              }
+            } else {
+              alert("Please highlight text before assigning a label.");
+            }
+          } else {
+            alert("Please highlight text before assigning a label.");
+          }
+        }
+
+        // Handle label removal
+        if (event.target.classList.contains("remove-label")) {
+          const labelContainer = event.target.parentElement;
+          const labelButton = labelContainer.querySelector(".label-button");
+          const labelName = labelButton.textContent;
+
+          // Confirm removal
+          const confirmRemoval = confirm(
+            `Are you sure you want to remove the custom label "${labelName}"?`
+          );
+          if (!confirmRemoval) return;
+
+          // Remove from customLabels
+          delete customLabels[labelName];
+
+          // Remove the label container from the toolbar
+          labelContainer.remove();
+
+          // Optionally, remove annotations using this label
+          /*
+          for (let noteIdx in annotations) {
+            annotations[noteIdx] = annotations[noteIdx].filter(
+              (ann) => ann.label !== labelName
+            );
+          }
+          renderAnnotations();
+          renderText();
+          */
+        }
+      });
+
+      // Handle Adding Custom Labels
+      addLabelButton.addEventListener("click", () => {
+        const labelName = customLabelName.value.trim();
+        const labelColor = customLabelColor.value;
+
+        if (!labelName) {
+          alert("Please enter a label name.");
+          return;
+        }
+
+        if (predefinedLabels[labelName] || customLabels[labelName]) {
+          alert("Label already exists.");
+          return;
+        }
+
+        // Add to customLabels
+        customLabels[labelName] = labelColor;
+
+        // Create new label container with 'remove-label' span
+        const labelContainer = document.createElement("div");
+        labelContainer.classList.add("label-container");
+
+        const button = document.createElement("button");
+        button.classList.add("label-button");
+        button.textContent = labelName;
+        button.style.backgroundColor = labelColor;
+        button.style.color = getContrastYIQ(labelColor);
+
+        const removeSpan = document.createElement("span");
+        removeSpan.classList.add("remove-label");
+        removeSpan.textContent = "x";
+
+        labelContainer.appendChild(button);
+        labelContainer.appendChild(removeSpan);
+
+        // Add the new label container to the toolbar
+        annotationToolbar.appendChild(labelContainer);
+
+        // Clear input fields
+        customLabelName.value = "";
+        customLabelColor.value = "#888888";
+
+        // Inform the user that the label was added
+        alert(`Custom label "${labelName}" added.`);
+      });
+
+      // Get Selection Indices
+      function getSelectionIndices(range) {
+        const text = notes[currentIndex];
+        const preSelectionRange = document.createRange();
+        preSelectionRange.selectNodeContents(textDisplay);
+        preSelectionRange.setEnd(range.startContainer, range.startOffset);
+        const start = preSelectionRange.toString().length;
+        const end = start + range.toString().length;
+        return { start, end };
+      }
+
+      // Render Annotations List
+      function renderAnnotations() {
+        annotationsDiv.innerHTML = "";
+        if (
+          !annotations[currentIndex] ||
+          annotations[currentIndex].length === 0
+        ) {
+          annotationsDiv.innerHTML = "<p>No annotations for this note.</p>";
+          return;
+        }
+
+        annotations[currentIndex].forEach((annotation, index) => {
+          const annotationDiv = document.createElement("div");
+          annotationDiv.classList.add("annotation");
+
+          // Annotation text and label
+          const textLabelDiv = document.createElement("div");
+          textLabelDiv.style.display = "inline-flex";
+          textLabelDiv.style.alignItems = "center";
+          textLabelDiv.style.gap = "5px";
+
+          const textSpan = document.createElement("span");
+          textSpan.textContent = `${index + 1}. "${annotation.text}" (${
+            annotation.start_idx
+          }-${annotation.end_idx}) -`;
+
+          const labelSpan = document.createElement("span");
+          labelSpan.textContent = annotation.label;
+          labelSpan.style.color = annotation.color;
+          labelSpan.style.fontWeight = "bold";
+
+          textLabelDiv.appendChild(textSpan);
+          textLabelDiv.appendChild(labelSpan);
+
+          // Remove button
+          const removeBtn = document.createElement("button");
+          removeBtn.textContent = "Remove";
+          removeBtn.setAttribute("data-note-index", currentIndex);
+          removeBtn.setAttribute("data-annotation-index", index);
+
+          annotationDiv.appendChild(textLabelDiv);
+          annotationDiv.appendChild(removeBtn);
+          annotationsDiv.appendChild(annotationDiv);
+        });
+      }
+
+      // Event Delegation for Remove Buttons
+      annotationsDiv.addEventListener("click", (event) => {
+        if (
+          event.target.tagName.toLowerCase() === "button" &&
+          event.target.textContent === "Remove"
+        ) {
+          const noteIdx = parseInt(
+            event.target.getAttribute("data-note-index")
+          );
+          const annIdx = parseInt(
+            event.target.getAttribute("data-annotation-index")
+          );
+          removeAnnotation(noteIdx, annIdx);
+        }
+      });
+
+      // Remove Annotation Function
+      function removeAnnotation(noteIndex, annotationIndex) {
+        if (
+          annotations[noteIndex] &&
+          annotations[noteIndex].length > annotationIndex
+        ) {
+          annotations[noteIndex].splice(annotationIndex, 1);
+          renderAnnotations();
+          renderText();
+
+          // Update sidebar checkmark
+          const li = noteList.querySelector(`li[data-index='${noteIndex}']`);
+          if (li) {
+            if (
+              !annotations[noteIndex] ||
+              annotations[noteIndex].length === 0
+            ) {
+              li.classList.remove("annotated");
+            }
+          }
+
+          // Disable download button if no annotations left for current note
+          if (noteIndex === currentIndex) {
+            downloadBtn.disabled = !(
+              annotations[currentIndex] && annotations[currentIndex].length > 0
+            );
+          }
+        } else {
+          alert("Invalid annotation index.");
+        }
+      }
+
+      // Render Text with Highlights
+      function renderText() {
+        const text = notes[currentIndex];
+        if (!text) {
+          textDisplay.innerHTML = "No note selected.";
+          return;
+        }
+
+        if (
+          !annotations[currentIndex] ||
+          annotations[currentIndex].length === 0
+        ) {
+          textDisplay.innerHTML = escapeHtml(text);
+          return;
+        }
+
+        // Use the already sorted annotations
+        const sortedAnnotations = annotations[currentIndex];
+
+        // Create an array of all annotation boundaries
+        let boundaries = [];
+        sortedAnnotations.forEach((ann) => {
+          boundaries.push({ index: ann.start_idx, type: "start", ann });
+          boundaries.push({ index: ann.end_idx, type: "end", ann });
+        });
+
+        // Sort boundaries
+        boundaries.sort((a, b) => {
+          if (a.index !== b.index) return a.index - b.index;
+          // End boundaries should come before start boundaries at the same index
+          if (a.type === "end" && b.type === "start") return -1;
+          if (a.type === "start" && b.type === "end") return 1;
+          return 0;
+        });
+
+        let result = "";
+        let activeAnnotations = [];
+        let lastIndex = 0;
+
+        boundaries.forEach((boundary) => {
+          const { index, type, ann } = boundary;
+
+          if (index > lastIndex) {
+            const segment = escapeHtml(text.slice(lastIndex, index));
+
+            if (activeAnnotations.length === 0) {
+              result += segment;
+            } else {
+              // Apply all active annotations
+              let nestedSegment = segment;
+              activeAnnotations.forEach((activeAnn) => {
+                nestedSegment = `<span class="highlight" style="background-color: ${
+                  activeAnn.color
+                }; color: ${getContrastYIQ(
+                  activeAnn.color
+                )};" title="${escapeHtml(
+                  activeAnn.label
+                )}">${nestedSegment}</span>`;
+              });
+              result += nestedSegment;
+            }
+
+            lastIndex = index;
+          }
+
+          if (type === "start") {
+            activeAnnotations.push(ann);
+          } else if (type === "end") {
+            // Remove the annotation from activeAnnotations
+            activeAnnotations = activeAnnotations.filter((a) => a !== ann);
+          }
+        });
+
+        // Append any remaining text after the last boundary
+        if (lastIndex < text.length) {
+          const segment = escapeHtml(text.slice(lastIndex));
+
+          if (activeAnnotations.length === 0) {
+            result += segment;
+          } else {
+            let nestedSegment = segment;
+            activeAnnotations.forEach((activeAnn) => {
+              nestedSegment = `<span class="highlight" style="background-color: ${
+                activeAnn.color
+              }; color: ${getContrastYIQ(
+                activeAnn.color
+              )};" title="${escapeHtml(
+                activeAnn.label
+              )}">${nestedSegment}</span>`;
+            });
+            result += nestedSegment;
+          }
+        }
+
+        textDisplay.innerHTML = result;
+      }
+
+      // Handle Download Annotations
+      downloadBtn.addEventListener("click", () => {
+        // Get the filename from the input
+        let filename = filenameInput.value.trim();
+
+        // Validate and set default filename if necessary
+        if (!filename) {
+          filename = "annotations.json";
+        } else {
+          // Ensure the filename ends with .json
+          if (!filename.toLowerCase().endsWith(".json")) {
+            filename += ".json";
+          }
+        }
+
+        // Filter notes with annotations
+        const annotationsData = originalNotes
+          .map((note, index) => ({
+            note: notes[index],
+            annotations: annotations[index] || [],
+          }))
+          .filter((entry) => entry.annotations.length > 0); // Keep only notes with annotations
+
+        if (annotationsData.length === 0) {
+          alert("No annotated notes to download.");
+          return;
+        }
+
+        const dataToDownload = {
+          annotations: annotationsData,
+        };
+
+        const blob = new Blob([JSON.stringify(dataToDownload, null, 2)], {
+          type: "application/json",
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename; // Use the user-defined filename
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      });
+
+      // Handle Navigation Buttons
+      prevBtn.addEventListener("click", () => {
+        if (currentIndex > 0) {
+          selectNote(currentIndex - 1);
+        }
+      });
+
+      nextBtn.addEventListener("click", () => {
+        if (currentIndex < notes.length - 1) {
+          selectNote(currentIndex + 1);
+        }
+      });
+    </script>
+  </body>
+</html>
