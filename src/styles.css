@@ -1,0 +1,507 @@
+/* Reset and Global Styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background-image: url("banner.png"); /* Ensure 'banner.png' is in the correct path */
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center center;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Header Styles */
+header {
+  background-color: #1ab0a1;
+  color: #fff;
+  padding: 20px;
+  text-align: center;
+  position: relative;
+}
+
+/* Logo Styles */
+.logo {
+  position: absolute;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 50px;
+  width: auto;
+}
+
+h1 {
+  margin: 0;
+  font-size: 2em;
+}
+
+/* Container Layout */
+.container {
+  display: flex;
+  flex: 1;
+  padding: 20px;
+  gap: 20px;
+}
+
+/* Left Sidebar: Notes List */
+.sidebar-left {
+  width: 25%;
+  background-color: rgba(68, 68, 68, 0.9);
+  color: #fff;
+  padding: 15px;
+  border-radius: 8px;
+  overflow-y: auto;
+}
+
+.sidebar-left h2 {
+  margin-bottom: 15px;
+  text-align: center;
+  color: #fff;
+}
+
+.file-input {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.file-input input[type="file"] {
+  display: none;
+}
+
+.file-input label {
+  background-color: #28a745;
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.file-input label:hover {
+  background-color: #218838;
+}
+
+.note-list {
+  list-style: none;
+  padding: 0;
+}
+
+.note-list li {
+  padding: 10px;
+  margin-bottom: 10px;
+  background-color: #555;
+  border-radius: 5px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background-color 0.3s;
+}
+
+.note-list li:hover {
+  background-color: #666;
+}
+
+.note-list li.active {
+  background-color: #007bff;
+}
+
+.note-list li.annotated::after {
+  content: "✔";
+  color: #28a745;
+  font-weight: bold;
+  margin-left: 10px;
+}
+
+/* Main Content Area */
+.main-content {
+  flex: 2;
+  background-color: #7bd6d4;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.row-indicator {
+  margin-bottom: 10px;
+  font-weight: bold;
+  color: #333;
+}
+
+/* Navigation Buttons */
+.navigation-buttons {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.navigation-buttons button {
+  flex: 1;
+  padding: 10px;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  font-size: 16px;
+}
+
+.navigation-buttons button:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+.navigation-buttons button:hover:not(:disabled) {
+  background-color: #0056b3;
+}
+
+#text-display {
+  flex: 1;
+  padding: 15px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  font-family: "Courier New", Courier, monospace;
+  position: relative;
+  background-color: #ffffff;
+}
+
+/* Highlight Class */
+#text-display .highlight {
+  padding: 2px 4px;
+  border-radius: 3px;
+  cursor: pointer;
+  opacity: 0.7;
+  display: inline;
+  position: relative;
+}
+
+/* Annotation Toolbar */
+.annotation-toolbar {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.annotation-toolbar .label-container {
+  position: relative;
+  display: inline-block;
+}
+
+.annotation-toolbar .remove-label {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  text-align: center;
+  line-height: 14px;
+  font-size: 12px;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.annotation-toolbar button.label-button {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  color: #fff;
+  transition: background-color 0.3s;
+  font-size: 14px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Predefined Labels */
+.Date {
+  background-color: #4ecdc4;
+}
+
+.Name {
+  background-color: #de6312;
+}
+
+.Location {
+  background-color: #ffcc00;
+  color: #333;
+}
+
+/* Right Sidebar: Annotations List and Add Label */
+.sidebar-right {
+  width: 25%;
+  background-color: rgba(68, 68, 68, 0.9);
+  color: #fff;
+  padding: 15px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.sidebar-right h2 {
+  margin-bottom: 15px;
+  text-align: center;
+  color: #fff;
+}
+
+/* Add Label Section */
+#add-label-container {
+  background-color: #fff;
+  color: #333;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+#add-label-container h2 {
+  margin-bottom: 10px;
+  font-size: 18px;
+  color: #333;
+}
+
+/* Flexbox for Inputs */
+.add-label-inputs {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+#add-label-container input[type="text"] {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 80%;
+}
+
+/* Enhanced Color Selector Styling */
+#add-label-container .color-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+}
+
+#add-label-container input[type="color"] {
+  border: none;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+/* Add Label Button */
+#add-label-container .color-input-wrapper button {
+  padding: 8px 12px;
+  background-color: #28a745;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  font-size: 14px;
+}
+
+#add-label-container .color-input-wrapper button:hover {
+  background-color: #218838;
+}
+
+/* Annotations List */
+#annotations-section {
+  flex: 1;
+  background-color: #ffffff;
+  color: #333;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+  overflow-y: auto;
+}
+
+#annotations-section h2 {
+  margin-bottom: 10px;
+  text-align: center;
+  color: #333;
+}
+
+.annotation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #f8f9fa;
+  padding: 8px;
+  border-radius: 5px;
+  margin-bottom: 10px;
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.1);
+}
+
+.annotation span {
+  flex: 1;
+  margin-right: 10px;
+  font-size: 14px;
+  word-break: break-all;
+}
+
+.annotation button {
+  padding: 5px 10px;
+  background-color: #dc3545;
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  font-size: 12px;
+}
+
+.annotation button:hover {
+  background-color: #c82333;
+}
+
+/* Download Button */
+.download-btn {
+  margin-top: 20px;
+  padding: 12px 0;
+  background-color: #17a2b8;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s;
+  text-align: center;
+}
+
+.download-btn:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+.download-btn:hover:not(:disabled) {
+  background-color: #138496;
+}
+
+/* New Styles for Filename Input */
+#filename-container {
+  text-align: center;
+  margin: 10px 0;
+}
+
+#filename-input {
+  padding: 8px;
+  width: 60%;
+  max-width: 300px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/* Scrollbar Styling */
+.sidebar-left::-webkit-scrollbar,
+.sidebar-right::-webkit-scrollbar,
+.main-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sidebar-left::-webkit-scrollbar-track,
+.sidebar-right::-webkit-scrollbar-track,
+.main-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.sidebar-left::-webkit-scrollbar-thumb,
+.sidebar-right::-webkit-scrollbar-thumb,
+.main-content::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.sidebar-left::-webkit-scrollbar-thumb:hover,
+.sidebar-right::-webkit-scrollbar-thumb:hover,
+.main-content::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .container {
+    flex-direction: column;
+  }
+
+  .sidebar-left,
+  .sidebar-right,
+  .main-content {
+    width: 100%;
+    height: auto;
+  }
+
+  /* Adjust logo position for smaller screens */
+  .logo {
+    position: static;
+    transform: none;
+    margin-bottom: 10px;
+  }
+
+  header {
+    text-align: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .annotation-toolbar {
+    flex-direction: column;
+    margin-bottom: 10px;
+  }
+
+  .annotation-toolbar button {
+    width: 100%;
+  }
+
+  .add-label-inputs {
+    width: 100%;
+  }
+
+  #add-label-container input[type="text"] {
+    width: 90%;
+  }
+
+  /* Adjust button size on smaller screens */
+  #add-label-container .color-input-wrapper button {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+}
+
+/* Additional Styles for Overlapping Annotations */
+#text-display {
+  position: relative;
+}
+
+#text-display .highlight {
+  position: relative;
+  display: inline;
+}
+
+/* Footer Styles */
+footer {
+  text-align: center;
+  padding: 10px;
+  background-color: #1ab0a1;
+  color: #fff;
+  font-size: 12px;
+}
