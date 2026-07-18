@@ -164,9 +164,10 @@
 
       .note-list li.annotated::after {
         content: "✔";
-        color: #28a745;
+        color: #7dd3fc;
         font-weight: bold;
         margin-left: 10px;
+        text-shadow: 0 0 6px rgba(125, 211, 252, 0.8);
       }
 
       /* Main Content Area */
@@ -709,6 +710,8 @@
       >
     </footer>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
     <!-- JavaScript -->
     <script>
       // DOM Elements
@@ -903,6 +906,12 @@
             end_idx: tokenObj.end_idx,
           })),
         };
+      }
+
+      function normalizeFilename(name, defaultBase, extension) {
+        const trimmed = (name || "").trim();
+        const safeBase = trimmed.replace(/\.(json|zip)$/i, "") || defaultBase;
+        return `${safeBase}${extension}`;
       }
 
       // File Upload Handler
@@ -1473,20 +1482,10 @@
       }
 
       // Handle Download Annotations
-      downloadBtn.addEventListener("click", () => {
+      downloadBtn.addEventListener("click", async () => {
         // Get the filename from the input
-        let filename = filenameInput.value.trim();
+        const requestedFilename = filenameInput.value.trim();
         const format = exportFormat.value;
-
-        // Validate and set default filename if necessary
-        if (!filename) {
-          filename = format === "bio" ? "annotations_bio.json" : "annotations.json";
-        } else {
-          // Ensure the filename ends with .json
-          if (!filename.toLowerCase().endsWith(".json")) {
-            filename += ".json";
-          }
-        }
 
         // Filter notes with annotations
         const annotationsData = originalNotes
@@ -1501,6 +1500,62 @@
           alert("No annotated notes to download.");
           return;
         }
+
+        if (annotationsData.length > 1) {
+          if (typeof JSZip === "undefined") {
+            alert("ZIP export is unavailable because JSZip did not load.");
+            return;
+          }
+
+          const zip = new JSZip();
+
+          annotationsData.forEach((entry) => {
+            const fileName = `note_${entry.note_index + 1}.json`;
+
+            let filePayload;
+            if (format === "bio") {
+              filePayload = {
+                format: "BIO",
+                scheme: "BIO",
+                overlap_policy: "longest_first_non_overwriting",
+                note_index: entry.note_index,
+                ...createBioForNote(entry.note, entry.annotations),
+              };
+            } else {
+              filePayload = {
+                format: "SPAN",
+                note_index: entry.note_index,
+                note: entry.note,
+                annotations: entry.annotations,
+              };
+            }
+
+            zip.file(fileName, JSON.stringify(filePayload, null, 2));
+          });
+
+          const zipBlob = await zip.generateAsync({ type: "blob" });
+          const zipFilename = normalizeFilename(
+            requestedFilename,
+            format === "bio" ? "annotations_bio" : "annotations",
+            ".zip"
+          );
+
+          const zipUrl = URL.createObjectURL(zipBlob);
+          const zipLink = document.createElement("a");
+          zipLink.href = zipUrl;
+          zipLink.download = zipFilename;
+          document.body.appendChild(zipLink);
+          zipLink.click();
+          document.body.removeChild(zipLink);
+          URL.revokeObjectURL(zipUrl);
+          return;
+        }
+
+        const filename = normalizeFilename(
+          requestedFilename,
+          format === "bio" ? "annotations_bio" : "annotations",
+          ".json"
+        );
 
         let dataToDownload;
         if (format === "bio") {

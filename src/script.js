@@ -72,6 +72,12 @@ function readFileContent(file) {
   });
 }
 
+function normalizeFilename(name, defaultBase, extension) {
+  const trimmed = (name || "").trim();
+  const safeBase = trimmed.replace(/\.(json|zip)$/i, "") || defaultBase;
+  return `${safeBase}${extension}`;
+}
+
 async function handleSelectedFiles(fileList) {
   const allFiles = Array.from(fileList || []);
   const supportedFiles = allFiles.filter((file) => isSupportedFile(file));
@@ -574,17 +580,12 @@ function renderText() {
 }
 
 // Handle Download Annotations
-downloadBtn.addEventListener("click", () => {
-  let filename = filenameInput.value.trim();
-
-  if (!filename) {
-    filename = "annotations.json";
-  } else if (!filename.toLowerCase().endsWith(".json")) {
-    filename += ".json";
-  }
+downloadBtn.addEventListener("click", async () => {
+  const requestedFilename = filenameInput.value.trim();
 
   const annotationsData = originalNotes
     .map((note, index) => ({
+      note_index: index,
       note: notes[index],
       annotations: annotations[index] || [],
     }))
@@ -594,6 +595,39 @@ downloadBtn.addEventListener("click", () => {
     alert("No annotated notes to download.");
     return;
   }
+
+  if (annotationsData.length > 1) {
+    if (typeof JSZip === "undefined") {
+      alert("ZIP export is unavailable because JSZip did not load.");
+      return;
+    }
+
+    const zip = new JSZip();
+    annotationsData.forEach((entry) => {
+      const fileName = `note_${entry.note_index + 1}.json`;
+      const payload = {
+        format: "SPAN",
+        note_index: entry.note_index,
+        note: entry.note,
+        annotations: entry.annotations,
+      };
+      zip.file(fileName, JSON.stringify(payload, null, 2));
+    });
+
+    const zipBlob = await zip.generateAsync({ type: "blob" });
+    const zipFilename = normalizeFilename(requestedFilename, "annotations", ".zip");
+    const zipUrl = URL.createObjectURL(zipBlob);
+    const zipLink = document.createElement("a");
+    zipLink.href = zipUrl;
+    zipLink.download = zipFilename;
+    document.body.appendChild(zipLink);
+    zipLink.click();
+    document.body.removeChild(zipLink);
+    URL.revokeObjectURL(zipUrl);
+    return;
+  }
+
+  const filename = normalizeFilename(requestedFilename, "annotations", ".json");
 
   const dataToDownload = {
     annotations: annotationsData,

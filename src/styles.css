@@ -156,9 +156,10 @@ h1 {
 
 .note-list li.annotated::after {
   content: "✔";
-  color: #28a745;
+  color: #7dd3fc;
   font-weight: bold;
   margin-left: 10px;
+  text-shadow: 0 0 6px rgba(125, 211, 252, 0.8);
 }
 
 /* Main Content Area */
