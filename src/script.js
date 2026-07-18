@@ -18,6 +18,7 @@ const filenameInput = document.getElementById("filename-input");
 // Data Structures
 let originalNotes = [];
 let notes = [];
+let noteTitles = [];
 let annotations = {};
 let currentIndex = -1;
 let customLabels = {};
@@ -72,6 +73,10 @@ function readFileContent(file) {
   });
 }
 
+function getNoteTitleFromFile(file) {
+  return file && file.name ? file.name : "Untitled note";
+}
+
 function normalizeFilename(name, defaultBase, extension) {
   const trimmed = (name || "").trim();
   const safeBase = trimmed.replace(/\.(json|zip)$/i, "") || defaultBase;
@@ -93,18 +98,21 @@ async function handleSelectedFiles(fileList) {
     try {
       const content = await readFileContent(file);
       const fileName = file.name.toLowerCase();
+      const title = getNoteTitleFromFile(file);
 
       if (fileName.endsWith(".csv")) {
         const lines = content.split(/\r\n|\n/).filter((line) => line.trim() !== "");
         lines.forEach((line) => {
           originalNotes.push(line);
           notes.push(line);
+          noteTitles.push(title);
         });
       } else {
         const cleanedText = content.trim();
         if (cleanedText.length > 0) {
           originalNotes.push(cleanedText);
           notes.push(cleanedText);
+          noteTitles.push(title);
         }
       }
     } catch (error) {
@@ -183,6 +191,7 @@ function parseText(data) {
 function resetData() {
   originalNotes = [];
   notes = [];
+  noteTitles = [];
   annotations = {};
   currentIndex = -1;
   textDisplay.innerHTML = "No note selected.";
@@ -199,7 +208,7 @@ function displayNotes() {
   noteList.innerHTML = "";
   notes.forEach((note, index) => {
     const li = document.createElement("li");
-    li.textContent = `Note ${index + 1}: ${truncateText(note, 20)}`;
+    li.textContent = noteTitles[index] || `Note ${index + 1}`;
     li.dataset.index = index;
 
     if (annotations[index] && annotations[index].length > 0) {
