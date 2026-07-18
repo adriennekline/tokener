@@ -11,7 +11,7 @@ const addLabelButton = document.getElementById("add-label-button");
 const customLabelName = document.getElementById("custom-label-name");
 const customLabelColor = document.getElementById("custom-label-color");
 const annotationsDiv = document.getElementById("annotations");
-const filenameInput = document.getElementById("filename-input"); // New Element
+const filenameInput = document.getElementById("filename-input");
 
 // Data Structures
 let originalNotes = [];
@@ -50,58 +50,19 @@ function escapeHtml(text) {
   });
 }
 
-function cleanMarkdown(text) {
-  // Remove markdown headers (# ## ### etc.)
-  text = text.replace(/^#{1,6}\s+/gm, '');
-  
-  // Remove bold (**text** or __text__)
-  text = text.replace(/\*\*(.+?)\*\*/g, '$1');
-  text = text.replace(/__(.+?)__/g, '$1');
-  
-  // Remove italic (*text* or _text_)
-  text = text.replace(/\*(.+?)\*/g, '$1');
-  text = text.replace(/_(.+?)_/g, '$1');
-  
-  // Remove strikethrough (~~text~~)
-  text = text.replace(/~~(.+?)~~/g, '$1');
-  
-  // Remove inline code (`code`)
-  text = text.replace(/`(.+?)`/g, '$1');
-  
-  // Remove links [text](url) -> text
-  text = text.replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1');
-  
-  // Remove image links ![alt](url)
-  text = text.replace(/!\[([^\]]*)\]\([^\)]+\)/g, '$1');
-  
-  // Remove blockquotes (> )
-  text = text.replace(/^>\s+/gm, '');
-  
-  // Remove horizontal rules (---, ***, ___)
-// Parse CSV File
-function parseCSV(data) {
-  resetData();
-
-  const lines = data.split(/\r\n|\n/).filter((line) => line.trim() !== "");
-  lines.forEach((line) => {
-    const cleaned = cleanMarkdown(line);
-    originalNotes.push(line);
-    notes.push(cleaned);
-  });
-
-  if (notes.length > 0) {
-    displayNotes();
-  } else {
-    alert("The CSV file is empty.");
-  }
-} const file = event.target.files[0];
+// File Upload Handler
+fileInput.addEventListener("change", function (event) {
+  const file = event.target.files[0];
   if (!file) {
     alert("No file selected.");
     return;
   }
 
-  const validTypes = ["text/csv", "text/plain"];
-  if (!validTypes.includes(file.type)) {
+  const fileName = file.name.toLowerCase();
+  const isCsv = file.type === "text/csv" || fileName.endsWith(".csv");
+  const isTxt = file.type === "text/plain" || fileName.endsWith(".txt");
+
+  if (!isCsv && !isTxt) {
     alert("Please upload a valid CSV or Text file.");
     return;
   }
@@ -109,9 +70,9 @@ function parseCSV(data) {
   const reader = new FileReader();
   reader.onload = function (e) {
     const content = e.target.result;
-    if (file.type === "text/csv") {
+    if (isCsv) {
       parseCSV(content);
-    } else if (file.type === "text/plain") {
+    } else if (isTxt) {
       parseText(content);
     } else {
       alert("Unsupported file type.");
@@ -122,18 +83,17 @@ function parseCSV(data) {
 
 // Parse CSV File
 function parseCSV(data) {
-  paragraphs.forEach((paragraph) => {
-    const cleaned = cleanMarkdown(paragraph);
-    originalNotes.push(paragraph);
-    notes.push(cleaned);
+  resetData();
+
+  const lines = data.split(/\r\n|\n/).filter((line) => line.trim() !== "");
+  lines.forEach((line) => {
+    originalNotes.push(line);
+    notes.push(line);
   });
 
   if (notes.length > 0) {
     displayNotes();
   } else {
-    alert("The Text file is empty.");
-  }
-} } else {
     alert("The CSV file is empty.");
   }
 }
@@ -141,36 +101,10 @@ function parseCSV(data) {
 // Parse Text File
 function parseText(data) {
   resetData();
-
-  // Try to parse by paragraphs (double line breaks)
-  let paragraphs = data
-    .split(/\n\s*\n/)
-    .filter((paragraph) => paragraph.trim() !== "");
-  
-  // If only one paragraph found, try splitting by sentences
-  if (paragraphs.length === 1) {
-    const sentences = paragraphs[0]
-      .split(/(?<=[.!?])\s+/)
-      .filter((sentence) => sentence.trim() !== "");
-    if (sentences.length > 1) {
-      paragraphs = sentences;
-    }
-  }
-  
-  // If still only one item, split by lines as fallback
-  if (paragraphs.length === 1) {
-    const lines = data.split(/\r\n|\n/).filter((line) => line.trim() !== "");
-    if (lines.length > 1) {
-      paragraphs = lines;
-    }
-  }
-
-  paragraphs.forEach((paragraph) => {
-    originalNotes.push(paragraph);
-    notes.push(paragraph);
-  });
-
-  if (notes.length > 0) {
+  const cleanedText = data.trim();
+  if (cleanedText.length > 0) {
+    originalNotes.push(cleanedText);
+    notes.push(cleanedText);
     displayNotes();
   } else {
     alert("The Text file is empty.");
@@ -189,7 +123,7 @@ function resetData() {
   prevBtn.disabled = true;
   nextBtn.disabled = true;
   downloadBtn.disabled = true;
-  filenameInput.value = ""; // Reset filename input
+  filenameInput.value = "";
 }
 
 // Display Notes in Sidebar
@@ -197,15 +131,13 @@ function displayNotes() {
   noteList.innerHTML = "";
   notes.forEach((note, index) => {
     const li = document.createElement("li");
-    li.textContent = `Note ${index + 1}: ${truncateText(note, 50)}`;
+    li.textContent = `Note ${index + 1}: ${truncateText(note, 20)}`;
     li.dataset.index = index;
 
-    // Add 'annotated' class if annotations exist
     if (annotations[index] && annotations[index].length > 0) {
       li.classList.add("annotated");
     }
 
-    // Click Event to Select Note
     li.addEventListener("click", () => selectNote(index));
     noteList.appendChild(li);
   });
@@ -213,9 +145,7 @@ function displayNotes() {
 
 // Truncate Text Helper
 function truncateText(text, maxLength) {
-  // Remove extra whitespace and line breaks for preview
-  const cleaned = text.replace(/\s+/g, ' ').trim();
-  return cleaned.length > maxLength ? cleaned.substring(0, maxLength) + "..." : cleaned;
+  return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
 }
 
 // Select a Note
@@ -235,7 +165,7 @@ function selectNote(index) {
 function highlightActiveNote() {
   Array.from(noteList.children).forEach((li) => {
     li.classList.remove("active");
-    if (parseInt(li.dataset.index) === currentIndex) {
+    if (parseInt(li.dataset.index, 10) === currentIndex) {
       li.classList.add("active");
     }
   });
@@ -249,10 +179,9 @@ function updateNavigationButtons() {
 
 // Predefined Labels and Their Colors
 const predefinedLabels = {
-  Date: "#4ecdc4",
-  Name: "#de6312",
-  Location: "#ffcc00",
-  // Removed 'Other' label
+  DATE: "#4ecdc4",
+  NAME: "#de6312",
+  LOCATION: "#ffcc00",
 };
 
 // Insert Annotation in Sorted Order with Merging
@@ -260,38 +189,22 @@ function insertAnnotationSorted(noteIndex, newAnn) {
   const annArray = annotations[noteIndex];
   const sameLabelAnns = annArray.filter((ann) => ann.label === newAnn.label);
 
-  // Find annotations to merge (overlapping or adjacent)
   const overlappingAnns = sameLabelAnns.filter(
-    (ann) =>
-      !(
-        newAnn.end_idx < ann.start_idx - 1 || newAnn.start_idx > ann.end_idx + 1
-      )
+    (ann) => !(newAnn.end_idx < ann.start_idx - 1 || newAnn.start_idx > ann.end_idx + 1)
   );
 
   if (overlappingAnns.length > 0) {
-    // Determine the merged range
-    const mergedStart = Math.min(
-      newAnn.start_idx,
-      ...overlappingAnns.map((ann) => ann.start_idx)
-    );
-    const mergedEnd = Math.max(
-      newAnn.end_idx,
-      ...overlappingAnns.map((ann) => ann.end_idx)
-    );
+    const mergedStart = Math.min(newAnn.start_idx, ...overlappingAnns.map((ann) => ann.start_idx));
+    const mergedEnd = Math.max(newAnn.end_idx, ...overlappingAnns.map((ann) => ann.end_idx));
 
-    // Remove the overlapping annotations
     annotations[noteIndex] = annArray.filter(
       (ann) =>
         !(
           ann.label === newAnn.label &&
-          !(
-            newAnn.end_idx < ann.start_idx - 1 ||
-            newAnn.start_idx > ann.end_idx + 1
-          )
+          !(newAnn.end_idx < ann.start_idx - 1 || newAnn.start_idx > ann.end_idx + 1)
         )
     );
 
-    // Create the merged annotation
     const mergedAnnotation = {
       label: newAnn.label,
       color: newAnn.color,
@@ -300,7 +213,6 @@ function insertAnnotationSorted(noteIndex, newAnn) {
       text: notes[noteIndex].substring(mergedStart, mergedEnd),
     };
 
-    // Insert the merged annotation in sorted order
     let inserted = false;
     for (let i = 0; i < annotations[noteIndex].length; i++) {
       if (mergedAnnotation.start_idx < annotations[noteIndex][i].start_idx) {
@@ -313,7 +225,6 @@ function insertAnnotationSorted(noteIndex, newAnn) {
       annotations[noteIndex].push(mergedAnnotation);
     }
   } else {
-    // No overlapping annotations, insert normally
     let inserted = false;
     for (let i = 0; i < annArray.length; i++) {
       if (newAnn.start_idx < annArray[i].start_idx) {
@@ -330,8 +241,12 @@ function insertAnnotationSorted(noteIndex, newAnn) {
 
 // Handle Label Assignment and Removal via Annotation Toolbar
 annotationToolbar.addEventListener("click", function (event) {
-  // Handle label assignment
   if (event.target.classList.contains("label-button")) {
+    if (currentIndex < 0 || !notes[currentIndex]) {
+      alert("Please select a note before assigning a label.");
+      return;
+    }
+
     const label = event.target.textContent;
     const color = predefinedLabels[label] || customLabels[label];
     if (!color) {
@@ -346,7 +261,6 @@ annotationToolbar.addEventListener("click", function (event) {
       if (selectedText.trim()) {
         const { start, end } = getSelectionIndices(range);
 
-        // Validate selection range
         if (start >= 0 && end <= notes[currentIndex].length && start < end) {
           const annotation = {
             label: label,
@@ -360,18 +274,15 @@ annotationToolbar.addEventListener("click", function (event) {
             annotations[currentIndex] = [];
           }
 
-          // Insert annotation with merging
           insertAnnotationSorted(currentIndex, annotation);
           renderAnnotations();
           renderText();
 
-          // Mark note as annotated
           const li = noteList.querySelector(`li[data-index='${currentIndex}']`);
           if (li) {
             li.classList.add("annotated");
           }
 
-          // Clear selection
           selection.removeAllRanges();
           downloadBtn.disabled = false;
         } else {
@@ -385,34 +296,18 @@ annotationToolbar.addEventListener("click", function (event) {
     }
   }
 
-  // Handle label removal
   if (event.target.classList.contains("remove-label")) {
     const labelContainer = event.target.parentElement;
     const labelButton = labelContainer.querySelector(".label-button");
     const labelName = labelButton.textContent;
 
-    // Confirm removal
     const confirmRemoval = confirm(
       `Are you sure you want to remove the custom label "${labelName}"?`
     );
     if (!confirmRemoval) return;
 
-    // Remove from customLabels
     delete customLabels[labelName];
-
-    // Remove the label container from the toolbar
     labelContainer.remove();
-
-    // Optionally, remove annotations using this label
-    /*
-    for (let noteIdx in annotations) {
-      annotations[noteIdx] = annotations[noteIdx].filter(
-        (ann) => ann.label !== labelName
-      );
-    }
-    renderAnnotations();
-    renderText();
-    */
   }
 });
 
@@ -431,10 +326,8 @@ addLabelButton.addEventListener("click", () => {
     return;
   }
 
-  // Add to customLabels
   customLabels[labelName] = labelColor;
 
-  // Create new label container with 'remove-label' span
   const labelContainer = document.createElement("div");
   labelContainer.classList.add("label-container");
 
@@ -450,21 +343,16 @@ addLabelButton.addEventListener("click", () => {
 
   labelContainer.appendChild(button);
   labelContainer.appendChild(removeSpan);
-
-  // Add the new label container to the toolbar
   annotationToolbar.appendChild(labelContainer);
 
-  // Clear input fields
   customLabelName.value = "";
   customLabelColor.value = "#888888";
 
-  // Inform the user that the label was added
   alert(`Custom label "${labelName}" added.`);
 });
 
 // Get Selection Indices
 function getSelectionIndices(range) {
-  const text = notes[currentIndex];
   const preSelectionRange = document.createRange();
   preSelectionRange.selectNodeContents(textDisplay);
   preSelectionRange.setEnd(range.startContainer, range.startOffset);
@@ -485,16 +373,13 @@ function renderAnnotations() {
     const annotationDiv = document.createElement("div");
     annotationDiv.classList.add("annotation");
 
-    // Annotation text and label
     const textLabelDiv = document.createElement("div");
     textLabelDiv.style.display = "inline-flex";
     textLabelDiv.style.alignItems = "center";
     textLabelDiv.style.gap = "5px";
 
     const textSpan = document.createElement("span");
-    textSpan.textContent = `${index + 1}. "${annotation.text}" (${
-      annotation.start_idx
-    }-${annotation.end_idx}) -`;
+    textSpan.textContent = `${index + 1}. "${annotation.text}" (${annotation.start_idx}-${annotation.end_idx}) -`;
 
     const labelSpan = document.createElement("span");
     labelSpan.textContent = annotation.label;
@@ -504,7 +389,6 @@ function renderAnnotations() {
     textLabelDiv.appendChild(textSpan);
     textLabelDiv.appendChild(labelSpan);
 
-    // Remove button
     const removeBtn = document.createElement("button");
     removeBtn.textContent = "Remove";
     removeBtn.setAttribute("data-note-index", currentIndex);
@@ -522,31 +406,24 @@ annotationsDiv.addEventListener("click", (event) => {
     event.target.tagName.toLowerCase() === "button" &&
     event.target.textContent === "Remove"
   ) {
-    const noteIdx = parseInt(event.target.getAttribute("data-note-index"));
-    const annIdx = parseInt(event.target.getAttribute("data-annotation-index"));
+    const noteIdx = parseInt(event.target.getAttribute("data-note-index"), 10);
+    const annIdx = parseInt(event.target.getAttribute("data-annotation-index"), 10);
     removeAnnotation(noteIdx, annIdx);
   }
 });
 
 // Remove Annotation Function
 function removeAnnotation(noteIndex, annotationIndex) {
-  if (
-    annotations[noteIndex] &&
-    annotations[noteIndex].length > annotationIndex
-  ) {
+  if (annotations[noteIndex] && annotations[noteIndex].length > annotationIndex) {
     annotations[noteIndex].splice(annotationIndex, 1);
     renderAnnotations();
     renderText();
 
-    // Update sidebar checkmark
     const li = noteList.querySelector(`li[data-index='${noteIndex}']`);
-    if (li) {
-      if (!annotations[noteIndex] || annotations[noteIndex].length === 0) {
-        li.classList.remove("annotated");
-      }
+    if (li && (!annotations[noteIndex] || annotations[noteIndex].length === 0)) {
+      li.classList.remove("annotated");
     }
 
-    // Disable download button if no annotations left for current note
     if (noteIndex === currentIndex) {
       downloadBtn.disabled = !(
         annotations[currentIndex] && annotations[currentIndex].length > 0
@@ -555,6 +432,8 @@ function removeAnnotation(noteIndex, annotationIndex) {
   } else {
     alert("Invalid annotation index.");
   }
+}
+
 // Render Text with Highlights
 function renderText() {
   const text = notes[currentIndex];
@@ -564,26 +443,20 @@ function renderText() {
   }
 
   if (!annotations[currentIndex] || annotations[currentIndex].length === 0) {
-    textDisplay.innerHTML = `<div style="white-space: pre-wrap; word-wrap: break-word; line-height: 1.6;">${escapeHtml(text)}</div>`;
-    return;
-  } textDisplay.innerHTML = escapeHtml(text);
+    textDisplay.innerHTML = escapeHtml(text);
     return;
   }
 
-  // Use the already sorted annotations
   const sortedAnnotations = annotations[currentIndex];
+  const boundaries = [];
 
-  // Create an array of all annotation boundaries
-  let boundaries = [];
   sortedAnnotations.forEach((ann) => {
     boundaries.push({ index: ann.start_idx, type: "start", ann });
     boundaries.push({ index: ann.end_idx, type: "end", ann });
   });
 
-  // Sort boundaries
   boundaries.sort((a, b) => {
     if (a.index !== b.index) return a.index - b.index;
-    // End boundaries should come before start boundaries at the same index
     if (a.type === "end" && b.type === "start") return -1;
     if (a.type === "start" && b.type === "end") return 1;
     return 0;
@@ -602,14 +475,9 @@ function renderText() {
       if (activeAnnotations.length === 0) {
         result += segment;
       } else {
-        // Apply all active annotations
         let nestedSegment = segment;
         activeAnnotations.forEach((activeAnn) => {
-          nestedSegment = `<span class="highlight" style="background-color: ${
-            activeAnn.color
-          }; color: ${getContrastYIQ(activeAnn.color)};" title="${escapeHtml(
-            activeAnn.label
-          )}">${nestedSegment}</span>`;
+          nestedSegment = `<span class="highlight" style="background-color: ${activeAnn.color}; color: ${getContrastYIQ(activeAnn.color)};" title="${escapeHtml(activeAnn.label)}">${nestedSegment}</span>`;
         });
         result += nestedSegment;
       }
@@ -619,13 +487,11 @@ function renderText() {
 
     if (type === "start") {
       activeAnnotations.push(ann);
-    } else if (type === "end") {
-      // Remove the annotation from activeAnnotations
+    } else {
       activeAnnotations = activeAnnotations.filter((a) => a !== ann);
     }
   });
 
-  // Append any remaining text after the last boundary
   if (lastIndex < text.length) {
     const segment = escapeHtml(text.slice(lastIndex));
 
@@ -634,42 +500,31 @@ function renderText() {
     } else {
       let nestedSegment = segment;
       activeAnnotations.forEach((activeAnn) => {
-        nestedSegment = `<span class="highlight" style="background-color: ${
-          activeAnn.color
-        }; color: ${getContrastYIQ(activeAnn.color)};" title="${escapeHtml(
-          activeAnn.label
-        )}">${nestedSegment}</span>`;
+        nestedSegment = `<span class="highlight" style="background-color: ${activeAnn.color}; color: ${getContrastYIQ(activeAnn.color)};" title="${escapeHtml(activeAnn.label)}">${nestedSegment}</span>`;
       });
       result += nestedSegment;
     }
-  textDisplay.innerHTML = `<div style="white-space: pre-wrap; word-wrap: break-word; line-height: 1.6;">${result}</div>`;
+  }
+
+  textDisplay.innerHTML = result;
 }
 
 // Handle Download Annotations
-
-// Handle Download Annotations
 downloadBtn.addEventListener("click", () => {
-  // Get the filename from the input
   let filename = filenameInput.value.trim();
 
-  // Validate and set default filename if necessary
   if (!filename) {
     filename = "annotations.json";
-  } else {
-    // Ensure the filename ends with .json
-    if (!filename.toLowerCase().endsWith(".json")) {
-      filename += ".json";
-    }
-    // Optional: Further validation can be added here (e.g., invalid characters)
+  } else if (!filename.toLowerCase().endsWith(".json")) {
+    filename += ".json";
   }
 
-  // Filter notes with annotations
   const annotationsData = originalNotes
     .map((note, index) => ({
       note: notes[index],
       annotations: annotations[index] || [],
     }))
-    .filter((entry) => entry.annotations.length > 0); // Keep only notes with annotations
+    .filter((entry) => entry.annotations.length > 0);
 
   if (annotationsData.length === 0) {
     alert("No annotated notes to download.");
@@ -686,7 +541,7 @@ downloadBtn.addEventListener("click", () => {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = filename; // Use the user-defined filename
+  a.download = filename;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

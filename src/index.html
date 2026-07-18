@@ -601,7 +601,7 @@
 
     <!-- Footer -->
     <footer>
-      <span>&copy; 2025</span>
+      <span>&copy; 2026</span>
       <a
         href="https://xtasis.com"
         target="_blank"
@@ -672,8 +672,11 @@
           return;
         }
 
-        const validTypes = ["text/csv", "text/plain"];
-        if (!validTypes.includes(file.type)) {
+        const fileName = file.name.toLowerCase();
+        const isCsv = file.type === "text/csv" || fileName.endsWith(".csv");
+        const isTxt = file.type === "text/plain" || fileName.endsWith(".txt");
+
+        if (!isCsv && !isTxt) {
           alert("Please upload a valid CSV or Text file.");
           return;
         }
@@ -681,9 +684,9 @@
         const reader = new FileReader();
         reader.onload = function (e) {
           const content = e.target.result;
-          if (file.type === "text/csv") {
+          if (isCsv) {
             parseCSV(content);
-          } else if (file.type === "text/plain") {
+          } else if (isTxt) {
             parseText(content);
           } else {
             alert("Unsupported file type.");
@@ -885,6 +888,11 @@
       annotationToolbar.addEventListener("click", function (event) {
         // Handle label assignment
         if (event.target.classList.contains("label-button")) {
+          if (currentIndex < 0 || !notes[currentIndex]) {
+            alert("Please select a note before assigning a label.");
+            return;
+          }
+
           const label = event.target.textContent;
           const color = predefinedLabels[label] || customLabels[label];
           if (!color) {
