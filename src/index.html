@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>TokeNER</title>
     <style>
+      @import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@700;800&display=swap");
+
       /* Reset and Global Styles */
       * {
         box-sizing: border-box;
@@ -14,10 +16,11 @@
 
       body {
         font-family: Arial, sans-serif;
-        background-image: url("banner.png"); /* Ensure 'banner.png' is in the correct path */
+        background-image: url("background.png");
         background-size: cover;
         background-repeat: no-repeat;
         background-position: center center;
+        background-attachment: fixed;
         display: flex;
         flex-direction: column;
         min-height: 100vh;
@@ -25,11 +28,12 @@
 
       /* Header Styles */
       header {
-        background-color: #16b4a4;
+        background-color: rgba(9, 34, 68, 0.72);
         color: #fff;
         padding: 20px;
         text-align: center;
         position: relative;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.25);
       }
 
       /* Logo Styles */
@@ -45,6 +49,10 @@
       h1 {
         margin: 0;
         font-size: 2em;
+        font-family: "Orbitron", "Segoe UI", sans-serif;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
       }
 
       /* Container Layout */
@@ -58,11 +66,13 @@
       /* Left Sidebar: Notes List */
       .sidebar-left {
         width: 25%;
-        background-color: rgba(68, 68, 68, 0.9);
+        background-color: rgba(18, 44, 74, 0.62);
         color: #fff;
         padding: 15px;
         border-radius: 8px;
         overflow-y: auto;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(6px);
       }
 
       .sidebar-left h2 {
@@ -81,7 +91,7 @@
       }
 
       .file-input label {
-        background-color: #28a745;
+        background-color: #8bd9e2;
         color: #fff;
         padding: 10px 20px;
         border-radius: 5px;
@@ -90,7 +100,7 @@
       }
 
       .file-input label:hover {
-        background-color: #218838;
+        background-color: #74cbd6;
       }
 
       .note-list {
@@ -101,7 +111,7 @@
       .note-list li {
         padding: 10px;
         margin-bottom: 10px;
-        background-color: #555;
+        background-color: rgba(255, 255, 255, 0.14);
         border-radius: 5px;
         cursor: pointer;
         display: flex;
@@ -111,11 +121,11 @@
       }
 
       .note-list li:hover {
-        background-color: #666;
+        background-color: rgba(255, 255, 255, 0.24);
       }
 
       .note-list li.active {
-        background-color: #007bff;
+        background-color: rgba(58, 124, 191, 0.9);
       }
 
       .note-list li.annotated::after {
@@ -128,19 +138,25 @@
       /* Main Content Area */
       .main-content {
         flex: 2;
-        background-color: rgba(205, 241, 238, 0.9);
+        background-color: rgba(248, 252, 255, 0.74);
         padding: 20px;
         border-radius: 8px;
         box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         display: flex;
         flex-direction: column;
         overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        backdrop-filter: blur(4px);
       }
 
       .row-indicator {
         margin-bottom: 10px;
         font-weight: bold;
-        color: #333;
+        color: #5e4b8a;
+        background-color: rgba(233, 220, 255, 0.8);
+        border: 1px solid rgba(171, 145, 214, 0.45);
+        border-radius: 8px;
+        padding: 10px 12px;
       }
 
       /* Navigation Buttons */
@@ -153,7 +169,7 @@
       .navigation-buttons button {
         flex: 1;
         padding: 10px;
-        background-color: #007bff;
+        background-color: #2f74bd;
         color: #fff;
         border: none;
         border-radius: 5px;
@@ -163,12 +179,12 @@
       }
 
       .navigation-buttons button:disabled {
-        background-color: #6c757d;
+        background-color: #7a8696;
         cursor: not-allowed;
       }
 
       .navigation-buttons button:hover:not(:disabled) {
-        background-color: #0056b3;
+        background-color: #265d99;
       }
 
       #text-display {
@@ -251,13 +267,15 @@
       /* Right Sidebar: Annotations List and Add Label */
       .sidebar-right {
         width: 25%;
-        background-color: rgba(68, 68, 68, 0.9);
+        background-color: rgba(18, 44, 74, 0.62);
         color: #fff;
         padding: 15px;
         border-radius: 8px;
         display: flex;
         flex-direction: column;
         overflow-y: auto;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(6px);
       }
 
       .sidebar-right h2 {
@@ -317,7 +335,7 @@
       /* Add Label Button */
       #add-label-container .color-input-wrapper button {
         padding: 8px 12px;
-        background-color: #28a745;
+        background-color: #2d8fa0;
         color: #fff;
         border: none;
         border-radius: 5px;
@@ -327,7 +345,7 @@
       }
 
       #add-label-container .color-input-wrapper button:hover {
-        background-color: #218838;
+        background-color: #257a8a;
       }
 
       /* Annotations List */
@@ -351,7 +369,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        background-color: #f8f9fa;
+        background-color: #eef5fb;
         padding: 8px;
         border-radius: 5px;
         margin-bottom: 10px;
@@ -384,7 +402,7 @@
       .download-btn {
         margin-top: 20px;
         padding: 12px 0;
-        background-color: #17a2b8;
+        background-color: #2d8fa0;
         color: #fff;
         border: none;
         border-radius: 5px;
@@ -400,7 +418,7 @@
       }
 
       .download-btn:hover:not(:disabled) {
-        background-color: #138496;
+        background-color: #257a8a;
       }
 
       /* New Styles for Filename Input */
@@ -434,14 +452,14 @@
       .sidebar-left::-webkit-scrollbar-thumb,
       .sidebar-right::-webkit-scrollbar-thumb,
       .main-content::-webkit-scrollbar-thumb {
-        background: #c1c1c1;
+        background: #9fb3c9;
         border-radius: 4px;
       }
 
       .sidebar-left::-webkit-scrollbar-thumb:hover,
       .sidebar-right::-webkit-scrollbar-thumb:hover,
       .main-content::-webkit-scrollbar-thumb:hover {
-        background: #a8a8a8;
+        background: #879cb4;
       }
 
       /* Responsive Design */
@@ -511,9 +529,10 @@
         align-items: center;
         gap: 5px;
         padding: 10px 20px;
-        background-color: #1ab0a1;
+        background-color: rgba(9, 34, 68, 0.72);
         color: #fff;
         font-size: 12px;
+        border-top: 1px solid rgba(255, 255, 255, 0.25);
       }
     </style>
   </head>
