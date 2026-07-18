@@ -1,5 +1,7 @@
 // DOM Elements
 const fileInput = document.getElementById("fileInput");
+const directoryInput = document.getElementById("directoryInput");
+const dropZone = document.getElementById("dropZone");
 const noteList = document.getElementById("noteList");
 const rowIndicator = document.getElementById("rowIndicator");
 const textDisplay = document.getElementById("text-display");
@@ -51,36 +53,95 @@ function escapeHtml(text) {
   });
 }
 
+function isSupportedFile(file) {
+  const fileName = file.name.toLowerCase();
+  return (
+    file.type === "text/csv" ||
+    file.type === "text/plain" ||
+    fileName.endsWith(".csv") ||
+    fileName.endsWith(".txt")
+  );
+}
+
+function readFileContent(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve(e.target.result);
+    reader.onerror = () => reject(new Error(`Failed to read ${file.name}`));
+    reader.readAsText(file);
+  });
+}
+
+async function handleSelectedFiles(fileList) {
+  const allFiles = Array.from(fileList || []);
+  const supportedFiles = allFiles.filter((file) => isSupportedFile(file));
+
+  if (supportedFiles.length === 0) {
+    alert("No valid CSV or TXT files were provided.");
+    return;
+  }
+
+  resetData();
+
+  for (const file of supportedFiles) {
+    try {
+      const content = await readFileContent(file);
+      const fileName = file.name.toLowerCase();
+
+      if (fileName.endsWith(".csv")) {
+        const lines = content.split(/\r\n|\n/).filter((line) => line.trim() !== "");
+        lines.forEach((line) => {
+          originalNotes.push(line);
+          notes.push(line);
+        });
+      } else {
+        const cleanedText = content.trim();
+        if (cleanedText.length > 0) {
+          originalNotes.push(cleanedText);
+          notes.push(cleanedText);
+        }
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  if (notes.length > 0) {
+    displayNotes();
+  } else {
+    alert("No readable content found in the selected files.");
+  }
+}
+
 // File Upload Handler
 fileInput.addEventListener("change", function (event) {
-  const file = event.target.files[0];
-  if (!file) {
-    alert("No file selected.");
-    return;
-  }
-
-  const fileName = file.name.toLowerCase();
-  const isCsv = file.type === "text/csv" || fileName.endsWith(".csv");
-  const isTxt = file.type === "text/plain" || fileName.endsWith(".txt");
-
-  if (!isCsv && !isTxt) {
-    alert("Please upload a valid CSV or Text file.");
-    return;
-  }
-
-  const reader = new FileReader();
-  reader.onload = function (e) {
-    const content = e.target.result;
-    if (isCsv) {
-      parseCSV(content);
-    } else if (isTxt) {
-      parseText(content);
-    } else {
-      alert("Unsupported file type.");
-    }
-  };
-  reader.readAsText(file);
+  handleSelectedFiles(event.target.files);
+  fileInput.value = "";
 });
+
+if (directoryInput) {
+  directoryInput.addEventListener("change", function (event) {
+    handleSelectedFiles(event.target.files);
+    directoryInput.value = "";
+  });
+}
+
+if (dropZone) {
+  dropZone.addEventListener("dragover", function (event) {
+    event.preventDefault();
+    dropZone.classList.add("drag-over");
+  });
+
+  dropZone.addEventListener("dragleave", function () {
+    dropZone.classList.remove("drag-over");
+  });
+
+  dropZone.addEventListener("drop", function (event) {
+    event.preventDefault();
+    dropZone.classList.remove("drag-over");
+    handleSelectedFiles(event.dataTransfer.files);
+  });
+}
 
 // Parse CSV File
 function parseCSV(data) {

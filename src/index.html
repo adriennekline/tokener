@@ -102,10 +102,27 @@
         border-radius: 5px;
         cursor: pointer;
         transition: background-color 0.3s;
+        display: inline-block;
+        margin: 0 5px 10px;
       }
 
       .file-input label:hover {
         background-color: #74cbd6;
+      }
+
+      .drop-zone {
+        border: 2px dashed rgba(139, 217, 226, 0.8);
+        border-radius: 8px;
+        padding: 12px;
+        color: #dff8fb;
+        font-size: 13px;
+        line-height: 1.4;
+        transition: background-color 0.2s, border-color 0.2s;
+      }
+
+      .drop-zone.drag-over {
+        background-color: rgba(139, 217, 226, 0.2);
+        border-color: #8bd9e2;
       }
 
       .note-list {
@@ -588,7 +605,19 @@
         <h2>Notes</h2>
         <div class="file-input">
           <input type="file" id="fileInput" accept=".csv, .txt" />
-          <label for="fileInput">Choose CSV or Text File</label>
+          <input
+            type="file"
+            id="directoryInput"
+            webkitdirectory
+            directory
+            multiple
+            accept=".csv,.txt"
+          />
+          <label for="fileInput">Choose File</label>
+          <label for="directoryInput">Choose Folder</label>
+          <div class="drop-zone" id="dropZone">
+            Drag and drop CSV/TXT files or folders here
+          </div>
         </div>
         <ul id="noteList" class="note-list"></ul>
       </div>
@@ -676,6 +705,8 @@
     <script>
       // DOM Elements
       const fileInput = document.getElementById("fileInput");
+      const directoryInput = document.getElementById("directoryInput");
+      const dropZone = document.getElementById("dropZone");
       const noteList = document.getElementById("noteList");
       const rowIndicator = document.getElementById("rowIndicator");
       const textDisplay = document.getElementById("text-display");
@@ -726,6 +757,68 @@
         return text.replace(/[&<>"']/g, function (m) {
           return map[m];
         });
+      }
+
+      function isSupportedFile(file) {
+        const fileName = file.name.toLowerCase();
+        return (
+          file.type === "text/csv" ||
+          file.type === "text/plain" ||
+          fileName.endsWith(".csv") ||
+          fileName.endsWith(".txt")
+        );
+      }
+
+      function readFileContent(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target.result);
+          reader.onerror = () => reject(new Error(`Failed to read ${file.name}`));
+          reader.readAsText(file);
+        });
+      }
+
+      async function handleSelectedFiles(fileList) {
+        const allFiles = Array.from(fileList || []);
+        const supportedFiles = allFiles.filter((file) => isSupportedFile(file));
+
+        if (supportedFiles.length === 0) {
+          alert("No valid CSV or TXT files were provided.");
+          return;
+        }
+
+        resetData();
+
+        for (const file of supportedFiles) {
+          try {
+            const content = await readFileContent(file);
+            const fileName = file.name.toLowerCase();
+
+            if (fileName.endsWith(".csv")) {
+              const lines = content
+                .split(/\r\n|\n/)
+                .filter((line) => line.trim() !== "");
+              lines.forEach((line) => {
+                originalNotes.push(line);
+                notes.push(line);
+              });
+            } else {
+              const cleanedText = content.trim();
+              if (cleanedText.length > 0) {
+                originalNotes.push(cleanedText);
+                notes.push(cleanedText);
+              }
+            }
+          } catch (error) {
+            console.error(error);
+          }
+        }
+
+        if (notes.length > 0) {
+          displayNotes();
+        } else {
+          alert("No readable content found in the selected files.");
+        }
       }
 
       function tokenizeWithOffsets(text) {
@@ -806,33 +899,28 @@
 
       // File Upload Handler
       fileInput.addEventListener("change", function (event) {
-        const file = event.target.files[0];
-        if (!file) {
-          alert("No file selected.");
-          return;
-        }
+        handleSelectedFiles(event.target.files);
+        fileInput.value = "";
+      });
 
-        const fileName = file.name.toLowerCase();
-        const isCsv = file.type === "text/csv" || fileName.endsWith(".csv");
-        const isTxt = file.type === "text/plain" || fileName.endsWith(".txt");
+      directoryInput.addEventListener("change", function (event) {
+        handleSelectedFiles(event.target.files);
+        directoryInput.value = "";
+      });
 
-        if (!isCsv && !isTxt) {
-          alert("Please upload a valid CSV or Text file.");
-          return;
-        }
+      dropZone.addEventListener("dragover", function (event) {
+        event.preventDefault();
+        dropZone.classList.add("drag-over");
+      });
 
-        const reader = new FileReader();
-        reader.onload = function (e) {
-          const content = e.target.result;
-          if (isCsv) {
-            parseCSV(content);
-          } else if (isTxt) {
-            parseText(content);
-          } else {
-            alert("Unsupported file type.");
-          }
-        };
-        reader.readAsText(file);
+      dropZone.addEventListener("dragleave", function () {
+        dropZone.classList.remove("drag-over");
+      });
+
+      dropZone.addEventListener("drop", function (event) {
+        event.preventDefault();
+        dropZone.classList.remove("drag-over");
+        handleSelectedFiles(event.dataTransfer.files);
       });
 
       // Parse CSV File
