@@ -16,7 +16,8 @@ body {
   background-attachment: fixed;
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 
 /* Header Styles */
@@ -54,6 +55,7 @@ h1 {
   flex: 1;
   padding: 20px;
   gap: 20px;
+  min-height: 0;
 }
 
 /* Left Sidebar: Notes List */
@@ -63,9 +65,11 @@ h1 {
   color: #fff;
   padding: 15px;
   border-radius: 8px;
-  overflow-y: auto;
+  overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.2);
   backdrop-filter: blur(6px);
+  display: flex;
+  flex-direction: column;
 }
 
 .sidebar-left h2 {
@@ -99,6 +103,10 @@ h1 {
 .note-list {
   list-style: none;
   padding: 0;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  padding-right: 4px;
 }
 
 .note-list li {
@@ -140,6 +148,8 @@ h1 {
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.35);
   backdrop-filter: blur(4px);
+  min-height: 0;
+  min-width: 0;
 }
 
 .row-indicator {
@@ -187,9 +197,12 @@ h1 {
   border-radius: 5px;
   overflow-y: auto;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
   font-family: "Courier New", Courier, monospace;
   position: relative;
   background-color: #ffffff;
+  min-height: 0;
 }
 
 /* Highlight Class */
@@ -208,6 +221,10 @@ h1 {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+  max-height: 120px;
+  overflow-y: auto;
+  align-content: flex-start;
+  padding-right: 4px;
 }
 
 .annotation-toolbar .label-container {
@@ -266,7 +283,7 @@ h1 {
   border-radius: 8px;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+  overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.2);
   backdrop-filter: blur(6px);
 }
@@ -350,6 +367,7 @@ h1 {
   border-radius: 8px;
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
   overflow-y: auto;
+  min-height: 0;
 }
 
 #annotations-section h2 {
@@ -429,28 +447,32 @@ h1 {
 }
 
 /* Scrollbar Styling */
-.sidebar-left::-webkit-scrollbar,
-.sidebar-right::-webkit-scrollbar,
+.note-list::-webkit-scrollbar,
+.annotation-toolbar::-webkit-scrollbar,
+#annotations-section::-webkit-scrollbar,
 .main-content::-webkit-scrollbar {
   width: 8px;
 }
 
-.sidebar-left::-webkit-scrollbar-track,
-.sidebar-right::-webkit-scrollbar-track,
+.note-list::-webkit-scrollbar-track,
+.annotation-toolbar::-webkit-scrollbar-track,
+#annotations-section::-webkit-scrollbar-track,
 .main-content::-webkit-scrollbar-track {
   background: #f1f1f1;
   border-radius: 4px;
 }
 
-.sidebar-left::-webkit-scrollbar-thumb,
-.sidebar-right::-webkit-scrollbar-thumb,
+.note-list::-webkit-scrollbar-thumb,
+.annotation-toolbar::-webkit-scrollbar-thumb,
+#annotations-section::-webkit-scrollbar-thumb,
 .main-content::-webkit-scrollbar-thumb {
   background: #9fb3c9;
   border-radius: 4px;
 }
 
-.sidebar-left::-webkit-scrollbar-thumb:hover,
-.sidebar-right::-webkit-scrollbar-thumb:hover,
+.note-list::-webkit-scrollbar-thumb:hover,
+.annotation-toolbar::-webkit-scrollbar-thumb:hover,
+#annotations-section::-webkit-scrollbar-thumb:hover,
 .main-content::-webkit-scrollbar-thumb:hover {
   background: #879cb4;
 }
