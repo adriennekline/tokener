@@ -1,0 +1,39 @@
+<svg width="512" height="512" viewBox="0 0 512 512" role="img" xmlns="http://www.w3.org/2000/svg">
+<title>TokeNER app icon — opalescent</title>
+<defs>
+<linearGradient id="bg" x1="0.05" y1="0" x2="0.95" y2="1">
+<stop offset="0" stop-color="#C7F4E4"/>
+<stop offset="0.28" stop-color="#A6D6FF"/>
+<stop offset="0.52" stop-color="#C9B6F5"/>
+<stop offset="0.76" stop-color="#F7C6E0"/>
+<stop offset="1" stop-color="#FFE3C7"/>
+</linearGradient>
+<radialGradient id="glow" cx="0.26" cy="0.2" r="0.85">
+<stop offset="0" stop-color="#ffffff" stop-opacity="0.6"/>
+<stop offset="0.55" stop-color="#ffffff" stop-opacity="0"/>
+</radialGradient>
+<linearGradient id="sheen" x1="0" y1="0" x2="1" y2="1">
+<stop offset="0" stop-color="#ffffff" stop-opacity="0"/>
+<stop offset="0.45" stop-color="#ffffff" stop-opacity="0.45"/>
+<stop offset="0.6" stop-color="#ffffff" stop-opacity="0"/>
+</linearGradient>
+<linearGradient id="b1" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7FE0C4"/><stop offset="1" stop-color="#63CBE8"/></linearGradient>
+<linearGradient id="b2" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#95BEFF"/><stop offset="1" stop-color="#BBA6F0"/></linearGradient>
+<linearGradient id="b3" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#F5AFD5"/><stop offset="1" stop-color="#F6CBAE"/></linearGradient>
+<clipPath id="clip"><rect x="0" y="0" width="512" height="512" rx="118"/></clipPath>
+</defs>
+<rect x="0" y="0" width="512" height="512" rx="118" fill="url(#bg)"/>
+<g clip-path="url(#clip)"><polygon points="-120,300 260,-80 400,-80 20,300" fill="url(#sheen)"/></g>
+<rect x="0" y="0" width="512" height="512" rx="118" fill="url(#glow)"/>
+<rect x="5" y="5" width="502" height="502" rx="114" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="3"/>
+<g transform="translate(256 256) rotate(-10) scale(1.22) translate(-256 -256)">
+<path d="M128 262 L214 184 L356 184 Q386 184 386 214 L386 310 Q386 340 356 340 L214 340 Z M176 262 A20 20 0 1 0 216 262 A20 20 0 1 0 176 262 Z" fill="#8f7bc0" fill-opacity="0.2" transform="translate(0 16)"/>
+<path d="M128 256 L214 178 L356 178 Q386 178 386 208 L386 304 Q386 334 356 334 L214 334 Z M176 256 A20 20 0 1 0 216 256 A20 20 0 1 0 176 256 Z" fill="#FCFCFE" fill-rule="evenodd"/>
+<rect x="240" y="204" width="118" height="24" rx="12" fill="url(#b1)"/>
+<rect x="240" y="244" width="92" height="24" rx="12" fill="url(#b2)"/>
+<rect x="240" y="284" width="110" height="24" rx="12" fill="url(#b3)"/>
+</g>
+<g transform="translate(420 84)" fill="#ffffff" fill-opacity="0.95">
+<path d="M0 -20 L5 -5 L20 0 L5 5 L0 20 L-5 5 L-20 0 L-5 -5 Z"/>
+</g>
+</svg>
