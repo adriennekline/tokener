@@ -19,6 +19,7 @@ let notes = [];
 let annotations = {};
 let currentIndex = -1;
 let customLabels = {};
+const ANNOTATION_PREVIEW_MAX_LENGTH = 60;
 
 // Utility Functions
 function getContrastYIQ(hexcolor) {
@@ -379,7 +380,9 @@ function renderAnnotations() {
     textLabelDiv.style.gap = "5px";
 
     const textSpan = document.createElement("span");
-    textSpan.textContent = `${index + 1}. "${annotation.text}" (${annotation.start_idx}-${annotation.end_idx}) -`;
+    const previewText = truncateText(annotation.text, ANNOTATION_PREVIEW_MAX_LENGTH);
+    textSpan.textContent = `${index + 1}. "${previewText}" (${annotation.start_idx}-${annotation.end_idx}) -`;
+    textSpan.title = annotation.text;
 
     const labelSpan = document.createElement("span");
     labelSpan.textContent = annotation.label;

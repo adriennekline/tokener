@@ -426,6 +426,11 @@
       #filename-container {
         text-align: center;
         margin: 10px 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+        align-items: center;
       }
 
       #filename-input {
@@ -434,6 +439,13 @@
         max-width: 300px;
         border: 1px solid #ccc;
         border-radius: 4px;
+      }
+
+      #export-format {
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        background: #fff;
       }
 
       /* Scrollbar Styling */
@@ -577,6 +589,10 @@
             id="filename-input"
             placeholder="Enter filename (e.g., my_annotations.json)"
           />
+          <select id="export-format" aria-label="Export format">
+            <option value="spans">Span JSON</option>
+            <option value="bio">BIO JSON</option>
+          </select>
         </div>
 
         <button id="downloadBtn" class="download-btn" disabled>
@@ -650,6 +666,7 @@
       const customLabelColor = document.getElementById("custom-label-color");
       const annotationsDiv = document.getElementById("annotations");
       const filenameInput = document.getElementById("filename-input"); // New Element
+      const exportFormat = document.getElementById("export-format");
 
       // Data Structures
       let originalNotes = [];
@@ -657,6 +674,7 @@
       let annotations = {};
       let currentIndex = -1;
       let customLabels = {};
+      const ANNOTATION_PREVIEW_MAX_LENGTH = 60;
 
       // Utility Functions
       function getContrastYIQ(hexcolor) {
@@ -686,6 +704,82 @@
         return text.replace(/[&<>"']/g, function (m) {
           return map[m];
         });
+      }
+
+      function tokenizeWithOffsets(text) {
+        const tokens = [];
+        const tokenRegex = /\S+/g;
+        let match;
+
+        while ((match = tokenRegex.exec(text)) !== null) {
+          tokens.push({
+            token: match[0],
+            start_idx: match.index,
+            end_idx: match.index + match[0].length,
+          });
+        }
+
+        return tokens;
+      }
+
+      function createBioForNote(noteText, noteAnnotations) {
+        const tokens = tokenizeWithOffsets(noteText);
+        const tags = Array(tokens.length).fill("O");
+
+        if (!noteAnnotations || noteAnnotations.length === 0 || tokens.length === 0) {
+          return {
+            text: noteText,
+            tokens,
+            tags,
+            sequence: tokens.map((tokenObj, idx) => ({
+              token: tokenObj.token,
+              tag: tags[idx],
+              start_idx: tokenObj.start_idx,
+              end_idx: tokenObj.end_idx,
+            })),
+          };
+        }
+
+        const sortedAnnotations = [...noteAnnotations].sort((a, b) => {
+          const lenA = a.end_idx - a.start_idx;
+          const lenB = b.end_idx - b.start_idx;
+          if (lenA !== lenB) return lenB - lenA;
+          return a.start_idx - b.start_idx;
+        });
+
+        sortedAnnotations.forEach((ann) => {
+          const overlappingTokenIdxs = [];
+
+          for (let i = 0; i < tokens.length; i++) {
+            const token = tokens[i];
+            const overlaps = token.start_idx < ann.end_idx && token.end_idx > ann.start_idx;
+            if (overlaps) {
+              overlappingTokenIdxs.push(i);
+            }
+          }
+
+          const unassignedIdxs = overlappingTokenIdxs.filter((idx) => tags[idx] === "O");
+          if (unassignedIdxs.length === 0) {
+            return;
+          }
+
+          tags[unassignedIdxs[0]] = `B-${ann.label}`;
+          for (let i = 1; i < unassignedIdxs.length; i++) {
+            tags[unassignedIdxs[i]] = `I-${ann.label}`;
+          }
+        });
+
+        return {
+          text: noteText,
+          tokens,
+          tags,
+          sequence: tokens.map((tokenObj, idx) => ({
+            token: tokenObj.token,
+            tag: tags[idx],
+            start_idx: tokenObj.start_idx,
+            end_idx: tokenObj.end_idx,
+          })),
+        };
       }
 
       // File Upload Handler
@@ -1086,9 +1180,14 @@
           textLabelDiv.style.gap = "5px";
 
           const textSpan = document.createElement("span");
-          textSpan.textContent = `${index + 1}. "${annotation.text}" (${
+          const previewText = truncateText(
+            annotation.text,
+            ANNOTATION_PREVIEW_MAX_LENGTH
+          );
+          textSpan.textContent = `${index + 1}. "${previewText}" (${
             annotation.start_idx
           }-${annotation.end_idx}) -`;
+          textSpan.title = annotation.text;
 
           const labelSpan = document.createElement("span");
           labelSpan.textContent = annotation.label;
@@ -1259,10 +1358,11 @@
       downloadBtn.addEventListener("click", () => {
         // Get the filename from the input
         let filename = filenameInput.value.trim();
+        const format = exportFormat.value;
 
         // Validate and set default filename if necessary
         if (!filename) {
-          filename = "annotations.json";
+          filename = format === "bio" ? "annotations_bio.json" : "annotations.json";
         } else {
           // Ensure the filename ends with .json
           if (!filename.toLowerCase().endsWith(".json")) {
@@ -1273,6 +1373,7 @@
         // Filter notes with annotations
         const annotationsData = originalNotes
           .map((note, index) => ({
+            note_index: index,
             note: notes[index],
             annotations: annotations[index] || [],
           }))
@@ -1283,9 +1384,23 @@
           return;
         }
 
-        const dataToDownload = {
-          annotations: annotationsData,
-        };
+        let dataToDownload;
+        if (format === "bio") {
+          dataToDownload = {
+            format: "BIO",
+            scheme: "BIO",
+            overlap_policy: "longest_first_non_overwriting",
+            notes: annotationsData.map((entry) => ({
+              note_index: entry.note_index,
+              ...createBioForNote(entry.note, entry.annotations),
+            })),
+          };
+        } else {
+          dataToDownload = {
+            format: "SPAN",
+            annotations: annotationsData,
+          };
+        }
 
         const blob = new Blob([JSON.stringify(dataToDownload, null, 2)], {
           type: "application/json",
