@@ -15,6 +15,7 @@ const customLabelColor = document.getElementById("custom-label-color");
 const annotationsDiv = document.getElementById("annotations");
 const filenameInput = document.getElementById("filename-input");
 const activeLabelName = document.getElementById("active-label-name");
+const labelSearchInput = document.getElementById("label-search");
 
 // Data Structures
 let originalNotes = [];
@@ -98,6 +99,26 @@ function setActiveLabel(label) {
   if (activeLabelName) {
     activeLabelName.textContent = label || "None";
   }
+}
+
+function filterLabelButtons(rawQuery) {
+  const query = (rawQuery || "").trim().toLowerCase();
+
+  Array.from(annotationToolbar.children).forEach((child) => {
+    let button = null;
+
+    if (child.classList.contains("label-container")) {
+      button = child.querySelector(".label-button");
+    } else if (child.classList.contains("label-button")) {
+      button = child;
+    }
+
+    if (!button) return;
+
+    const labelText = button.textContent.toLowerCase();
+    const isMatch = labelText.includes(query);
+    child.style.display = isMatch ? "" : "none";
+  });
 }
 
 function isRangeInsideTextDisplay(range) {
@@ -345,7 +366,6 @@ function updateNavigationButtons() {
 
 // Predefined Labels and Their Colors
 const predefinedLabels = {
-  ACCESSION_NUM: "#8f6de8",
   ADDRESS: "#ffd166",
   AGE: "#6f9bff",
   CREDIT_CARD: "#ff7f66",
@@ -359,6 +379,7 @@ const predefinedLabels = {
   MAC: "#57b9ba",
   NAME: "#ff8a4c",
   ORG: "#7d93c8",
+  PATIENT_ID: "#8f6de8",
   PHONE: "#3aa6cc",
   SEX: "#d785d3",
   SSN: "#ff6f91",
@@ -482,6 +503,10 @@ addLabelButton.addEventListener("click", () => {
   labelContainer.appendChild(removeSpan);
   annotationToolbar.appendChild(labelContainer);
 
+  if (labelSearchInput) {
+    filterLabelButtons(labelSearchInput.value);
+  }
+
   customLabelName.value = "";
   customLabelColor.value = "#888888";
 
@@ -492,6 +517,12 @@ textDisplay.addEventListener("mouseup", () => {
   if (!activeLabel) return;
   applyLabelToCurrentSelection(activeLabel, { silent: true });
 });
+
+if (labelSearchInput) {
+  labelSearchInput.addEventListener("input", (event) => {
+    filterLabelButtons(event.target.value);
+  });
+}
 
 // Get Selection Indices
 function getSelectionIndices(range) {

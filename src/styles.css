@@ -243,7 +243,7 @@ h1 {
 
 /* Annotation Toolbar */
 .annotation-toolbar {
-  margin-top: 4px;
+  margin-top: 0;
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
@@ -319,10 +319,6 @@ h1 {
 }
 
 /* Predefined Labels */
-.ACCESSION_NUM {
-  background-color: #8f6de8;
-}
-
 .ADDRESS {
   background-color: #ffd166;
 }
@@ -375,6 +371,10 @@ h1 {
   background-color: #7d93c8;
 }
 
+.PATIENT_ID {
+  background-color: #8f6de8;
+}
+
 .PHONE {
   background-color: #3aa6cc;
 }
@@ -411,30 +411,79 @@ h1 {
 }
 
 .label-section-header {
-  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 0;
+  flex-wrap: nowrap;
+}
+
+.label-header-main {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  height: 24px;
 }
 
 .label-section-header h2 {
-  margin-bottom: 4px;
+  margin: 0;
   text-align: left;
-  font-size: 16px;
+  font-size: 14px;
+  line-height: 1;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  color: #ffffff;
+}
+
+#label-search {
+  width: 135px;
+  max-width: 38vw;
+  padding: 0 6px 0 24px;
+  height: 24px;
+  line-height: 24px;
+  border: 1px solid rgba(203, 222, 247, 0.9);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.95);
+  color: #243447;
+  font-size: 11px;
+}
+
+.label-search-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.label-search-wrap .fa-magnifying-glass {
+  position: absolute;
+  left: 8px;
+  font-size: 10px;
+  color: #6b7a8c;
+  pointer-events: none;
+}
+
+#label-search::placeholder {
+  color: #6b7a8c;
 }
 
 .label-section-header p {
   margin: 0;
-  font-size: 12px;
+  font-size: 11px;
+  line-height: 1;
   color: #d6e7ff;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
 }
 
 #active-label-name {
   color: #ffffff;
   font-weight: 700;
-}
-
-.sidebar-right h2 {
-  margin-bottom: 15px;
-  text-align: center;
-  color: #fff;
 }
 
 /* Add Label Section */
