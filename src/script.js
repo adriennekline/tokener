@@ -369,6 +369,7 @@ const predefinedLabels = {
   ADDRESS: "#ffd166",
   AGE: "#6f9bff",
   CREDIT_CARD: "#ff7f66",
+  DATE: "#f7a64a",
   EMAIL: "#22c7b8",
   GPS: "#39d98a",
   HOSPITAL: "#8bcf95",
