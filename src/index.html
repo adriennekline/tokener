@@ -190,25 +190,35 @@
         min-width: 0;
       }
 
-      .row-indicator {
+      .note-nav-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
         margin-bottom: 10px;
+      }
+
+      .row-indicator {
+        margin-bottom: 0;
         font-weight: bold;
         color: #5e4b8a;
         background-color: rgba(233, 220, 255, 0.8);
         border: 1px solid rgba(171, 145, 214, 0.45);
         border-radius: 8px;
         padding: 10px 12px;
+        flex: 1;
       }
 
       /* Navigation Buttons */
       .navigation-buttons {
         display: flex;
         gap: 10px;
-        margin-bottom: 10px;
+        margin-bottom: 0;
       }
 
       .navigation-buttons button {
-        flex: 1;
+        flex: 0 0 auto;
+        min-width: 110px;
         padding: 10px;
         background-color: #2f74bd;
         color: #fff;
@@ -731,6 +741,20 @@
       }
 
       @media (max-width: 768px) {
+        .note-nav-bar {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .note-nav-bar .navigation-buttons {
+          width: 100%;
+        }
+
+        .note-nav-bar .navigation-buttons button {
+          flex: 1;
+          min-width: 0;
+        }
+
         .annotation-toolbar {
           flex-direction: column;
           margin-bottom: 10px;
@@ -820,12 +844,14 @@
 
       <!-- Main Content Area: Note Display -->
       <div class="main-content">
-        <div class="row-indicator" id="rowIndicator">
-          Select a note to begin
-        </div>
-        <div class="navigation-buttons">
-          <button id="prevBtn" disabled>Previous</button>
-          <button id="nextBtn" disabled>Next</button>
+        <div class="note-nav-bar">
+          <div class="row-indicator" id="rowIndicator">
+            Select a note to begin
+          </div>
+          <div class="navigation-buttons">
+            <button id="prevBtn" disabled>Previous</button>
+            <button id="nextBtn" disabled>Next</button>
+          </div>
         </div>
         <div id="text-display">No note selected.</div>
 
