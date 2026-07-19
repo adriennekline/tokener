@@ -14,6 +14,7 @@ const customLabelName = document.getElementById("custom-label-name");
 const customLabelColor = document.getElementById("custom-label-color");
 const annotationsDiv = document.getElementById("annotations");
 const filenameInput = document.getElementById("filename-input");
+const activeLabelName = document.getElementById("active-label-name");
 
 // Data Structures
 let originalNotes = [];
@@ -93,6 +94,10 @@ function setActiveLabel(label) {
   annotationToolbar.querySelectorAll(".label-button").forEach((button) => {
     button.classList.toggle("selected", button.textContent === label);
   });
+
+  if (activeLabelName) {
+    activeLabelName.textContent = label || "None";
+  }
 }
 
 function isRangeInsideTextDisplay(range) {
@@ -340,13 +345,24 @@ function updateNavigationButtons() {
 
 // Predefined Labels and Their Colors
 const predefinedLabels = {
-  date: "#4ecdc4",
-  name: "#de6312",
-  hospital: "#ffcc00",
-  "email address": "#7c6df2",
-  "IP adress": "#2a9d8f",
-  patientID: "#ef476f",
-  job: "#3a86ff",
+  ACCESSION_NUM: "#8f6de8",
+  ADDRESS: "#ffd166",
+  AGE: "#6f9bff",
+  CREDIT_CARD: "#ff7f66",
+  EMAIL: "#22c7b8",
+  GPS: "#39d98a",
+  HOSPITAL: "#8bcf95",
+  IBAN: "#1ecbb4",
+  IP: "#4da3ff",
+  JOB: "#9a7bff",
+  LICENSE_PLATE: "#c9996b",
+  MAC: "#57b9ba",
+  NAME: "#ff8a4c",
+  ORG: "#7d93c8",
+  PHONE: "#3aa6cc",
+  SEX: "#d785d3",
+  SSN: "#ff6f91",
+  URL: "#3f8cff",
 };
 
 // Insert Annotation in Sorted Order with Merging

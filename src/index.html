@@ -328,41 +328,81 @@
       }
 
       /* Predefined Labels */
-      .DATE {
-        background-color: #4ecdc4;
+      .ACCESSION_NUM {
+        background-color: #8f6de8;
       }
 
-      .NAME {
-        background-color: #de6312;
+      .ADDRESS {
+        background-color: #ffd166;
+      }
+
+      .AGE {
+        background-color: #6f9bff;
+      }
+
+      .CREDIT_CARD {
+        background-color: #ff7f66;
+      }
+
+      .EMAIL {
+        background-color: #22c7b8;
+      }
+
+      .GPS {
+        background-color: #39d98a;
       }
 
       .HOSPITAL {
-        background-color: #ffcc00;
-        color: #333;
+        background-color: #8bcf95;
       }
 
-      .EMAIL_ADDRESS {
-        background-color: #7c6df2;
+      .IBAN {
+        background-color: #1ecbb4;
       }
 
-      .IP_ADRESS {
-        background-color: #2a9d8f;
-      }
-
-      .PATIENT_ID {
-        background-color: #ef476f;
+      .IP {
+        background-color: #4da3ff;
       }
 
       .JOB {
-        background-color: #3a86ff;
+        background-color: #9a7bff;
       }
 
-      .HOSPITAL,
-      .EMAIL_ADDRESS,
-      .IP_ADRESS,
-      .PATIENT_ID,
-      .JOB {
-        color: #333;
+      .LICENSE_PLATE {
+        background-color: #c9996b;
+      }
+
+      .MAC {
+        background-color: #57b9ba;
+      }
+
+      .NAME {
+        background-color: #ff8a4c;
+      }
+
+      .ORG {
+        background-color: #7d93c8;
+      }
+
+      .PHONE {
+        background-color: #3aa6cc;
+      }
+
+      .SEX {
+        background-color: #d785d3;
+      }
+
+      .SSN {
+        background-color: #ff6f91;
+      }
+
+      .URL {
+        background-color: #3f8cff;
+      }
+
+      .ADDRESS,
+      .HOSPITAL {
+        color: #1d2a35;
       }
 
       /* Right Sidebar: Annotations List and Add Label */
@@ -379,6 +419,27 @@
         backdrop-filter: blur(6px);
       }
 
+      .label-section-header {
+        margin-bottom: 8px;
+      }
+
+      .label-section-header h2 {
+        margin-bottom: 4px;
+        text-align: left;
+        font-size: 16px;
+      }
+
+      .label-section-header p {
+        margin: 0;
+        font-size: 12px;
+        color: #d6e7ff;
+      }
+
+      #active-label-name {
+        color: #ffffff;
+        font-weight: 700;
+      }
+
       .sidebar-right h2 {
         margin-bottom: 15px;
         text-align: center;
@@ -389,40 +450,47 @@
       #add-label-container {
         background-color: #fff;
         color: #333;
-        padding: 15px;
+        padding: 8px;
         border-radius: 8px;
-        margin-bottom: 20px;
+        margin-bottom: 8px;
         box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
         text-align: center;
       }
 
       #add-label-container h2 {
-        margin-bottom: 10px;
-        font-size: 18px;
+        margin-bottom: 8px;
+        font-size: 14px;
         color: #333;
       }
 
       /* Flexbox for Inputs */
       .add-label-inputs {
+        width: 100%;
+      }
+
+      .add-label-row {
         display: flex;
-        flex-direction: column;
         align-items: center;
-        gap: 10px;
+        justify-content: center;
+        gap: 8px;
       }
 
       #add-label-container input[type="text"] {
-        padding: 8px;
+        padding: 6px 8px;
         border: 1px solid #ccc;
         border-radius: 4px;
-        width: 80%;
+        width: 52%;
+        min-width: 170px;
+        font-size: 13px;
       }
 
       /* Enhanced Color Selector Styling */
       #add-label-container .color-input-wrapper {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
         justify-content: center;
+        flex-wrap: nowrap;
       }
 
       #add-label-container input[type="color"] {
@@ -435,14 +503,14 @@
 
       /* Add Label Button */
       #add-label-container .color-input-wrapper button {
-        padding: 8px 12px;
+        padding: 6px 10px;
         background-color: #2d8fa0;
         color: #fff;
         border: none;
         border-radius: 5px;
         cursor: pointer;
         transition: background-color 0.3s;
-        font-size: 14px;
+        font-size: 12px;
       }
 
       #add-label-container .color-input-wrapper button:hover {
@@ -619,8 +687,13 @@
           width: 100%;
         }
 
+        .add-label-row {
+          flex-wrap: wrap;
+        }
+
         #add-label-container input[type="text"] {
-          width: 90%;
+          width: 100%;
+          min-width: 0;
         }
 
         /* Adjust button size on smaller screens */
@@ -719,15 +792,31 @@
 
       <!-- Right Sidebar: Annotations and Add Label -->
       <div class="sidebar-right">
+        <div class="label-section-header">
+          <h2>Labels</h2>
+          <p>Active: <span id="active-label-name">None</span></p>
+        </div>
+
         <!-- Annotation Toolbar (Label List) -->
         <div class="annotation-toolbar" id="annotationToolbar">
-          <button class="label-button DATE">date</button>
-          <button class="label-button NAME">name</button>
-          <button class="label-button HOSPITAL">hospital</button>
-          <button class="label-button EMAIL_ADDRESS">email address</button>
-          <button class="label-button IP_ADRESS">IP adress</button>
-          <button class="label-button PATIENT_ID">patientID</button>
-          <button class="label-button JOB">job</button>
+          <button class="label-button ACCESSION_NUM">ACCESSION_NUM</button>
+          <button class="label-button ADDRESS">ADDRESS</button>
+          <button class="label-button AGE">AGE</button>
+          <button class="label-button CREDIT_CARD">CREDIT_CARD</button>
+          <button class="label-button EMAIL">EMAIL</button>
+          <button class="label-button GPS">GPS</button>
+          <button class="label-button HOSPITAL">HOSPITAL</button>
+          <button class="label-button IBAN">IBAN</button>
+          <button class="label-button IP">IP</button>
+          <button class="label-button JOB">JOB</button>
+          <button class="label-button LICENSE_PLATE">LICENSE_PLATE</button>
+          <button class="label-button MAC">MAC</button>
+          <button class="label-button NAME">NAME</button>
+          <button class="label-button ORG">ORG</button>
+          <button class="label-button PHONE">PHONE</button>
+          <button class="label-button SEX">SEX</button>
+          <button class="label-button SSN">SSN</button>
+          <button class="label-button URL">URL</button>
           <!-- Custom labels will be appended here -->
         </div>
 
@@ -735,17 +824,19 @@
         <div id="add-label-container">
           <h2>Add Custom Label</h2>
           <div class="add-label-inputs">
-            <input
-              type="text"
-              id="custom-label-name"
-              placeholder="Label Name"
-            />
-            <div class="color-input-wrapper">
-              <label for="custom-label-color" style="font-size: 14px"
-                >Color:</label
-              >
-              <input type="color" id="custom-label-color" value="#888888" />
-              <button id="add-label-button">Add Label</button>
+            <div class="add-label-row">
+              <input
+                type="text"
+                id="custom-label-name"
+                placeholder="Label Name"
+              />
+              <div class="color-input-wrapper">
+                <label for="custom-label-color" style="font-size: 12px"
+                  >Color:</label
+                >
+                <input type="color" id="custom-label-color" value="#888888" />
+                <button id="add-label-button">Add Label</button>
+              </div>
             </div>
           </div>
         </div>
@@ -792,6 +883,7 @@
       const annotationsDiv = document.getElementById("annotations");
       const filenameInput = document.getElementById("filename-input"); // New Element
       const exportFormat = document.getElementById("export-format");
+      const activeLabelName = document.getElementById("active-label-name");
 
       // Data Structures
       let originalNotes = [];
@@ -993,6 +1085,10 @@
         annotationToolbar.querySelectorAll(".label-button").forEach((button) => {
           button.classList.toggle("selected", button.textContent === label);
         });
+
+        if (activeLabelName) {
+          activeLabelName.textContent = label || "None";
+        }
       }
 
       function isRangeInsideTextDisplay(range) {
@@ -1200,13 +1296,24 @@
 
       // Predefined Labels and Their Colors
       const predefinedLabels = {
-        date: "#4ecdc4",
-        name: "#de6312",
-        hospital: "#ffcc00",
-        "email address": "#7c6df2",
-        "IP adress": "#2a9d8f",
-        patientID: "#ef476f",
-        job: "#3a86ff",
+        ACCESSION_NUM: "#6b5b95",
+        ADDRESS: "#ffd166",
+        AGE: "#6f9bff",
+        CREDIT_CARD: "#ff7f66",
+        EMAIL: "#22c7b8",
+        GPS: "#39d98a",
+        HOSPITAL: "#8bcf95",
+        IBAN: "#1ecbb4",
+        IP: "#4da3ff",
+        JOB: "#9a7bff",
+        LICENSE_PLATE: "#c9996b",
+        MAC: "#57b9ba",
+        NAME: "#ff8a4c",
+        ORG: "#7d93c8",
+        PHONE: "#3aa6cc",
+        SEX: "#d785d3",
+        SSN: "#ff6f91",
+        URL: "#3f8cff",
       };
 
       // Insert Annotation in Sorted Order with Merging
