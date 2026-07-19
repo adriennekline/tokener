@@ -22,6 +22,7 @@ let noteTitles = [];
 let annotations = {};
 let currentIndex = -1;
 let customLabels = {};
+let activeLabel = null;
 const ANNOTATION_PREVIEW_MAX_LENGTH = 60;
 
 // Utility Functions
@@ -81,6 +82,89 @@ function normalizeFilename(name, defaultBase, extension) {
   const trimmed = (name || "").trim();
   const safeBase = trimmed.replace(/\.(json|zip)$/i, "") || defaultBase;
   return `${safeBase}${extension}`;
+}
+
+function getLabelColor(label) {
+  return predefinedLabels[label] || customLabels[label] || null;
+}
+
+function setActiveLabel(label) {
+  activeLabel = label;
+  annotationToolbar.querySelectorAll(".label-button").forEach((button) => {
+    button.classList.toggle("selected", button.textContent === label);
+  });
+}
+
+function isRangeInsideTextDisplay(range) {
+  let node = range.commonAncestorContainer;
+  if (node.nodeType === Node.TEXT_NODE) {
+    node = node.parentNode;
+  }
+  return textDisplay.contains(node);
+}
+
+function applyLabelToCurrentSelection(label, options = {}) {
+  const { silent = false } = options;
+
+  if (currentIndex < 0 || !notes[currentIndex]) {
+    if (!silent) alert("Please select a note before assigning a label.");
+    return false;
+  }
+
+  const color = getLabelColor(label);
+  if (!color) {
+    if (!silent) alert("Label color not found.");
+    return false;
+  }
+
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0) {
+    if (!silent) alert("Please highlight text before assigning a label.");
+    return false;
+  }
+
+  const range = selection.getRangeAt(0);
+  if (!isRangeInsideTextDisplay(range)) {
+    if (!silent) alert("Please highlight text inside the note area.");
+    return false;
+  }
+
+  const selectedText = selection.toString();
+  if (!selectedText.trim()) {
+    if (!silent) alert("Please highlight text before assigning a label.");
+    return false;
+  }
+
+  const { start, end } = getSelectionIndices(range);
+  if (!(start >= 0 && end <= notes[currentIndex].length && start < end)) {
+    if (!silent) alert("Invalid selection range. Please try again.");
+    return false;
+  }
+
+  const annotation = {
+    label,
+    color,
+    start_idx: start,
+    end_idx: end,
+    text: notes[currentIndex].substring(start, end),
+  };
+
+  if (!annotations[currentIndex]) {
+    annotations[currentIndex] = [];
+  }
+
+  insertAnnotationSorted(currentIndex, annotation);
+  renderAnnotations();
+  renderText();
+
+  const li = noteList.querySelector(`li[data-index='${currentIndex}']`);
+  if (li) {
+    li.classList.add("annotated");
+  }
+
+  selection.removeAllRanges();
+  downloadBtn.disabled = false;
+  return true;
 }
 
 async function handleSelectedFiles(fileList) {
@@ -256,9 +340,13 @@ function updateNavigationButtons() {
 
 // Predefined Labels and Their Colors
 const predefinedLabels = {
-  DATE: "#4ecdc4",
-  NAME: "#de6312",
-  LOCATION: "#ffcc00",
+  date: "#4ecdc4",
+  name: "#de6312",
+  hospital: "#ffcc00",
+  "email address": "#7c6df2",
+  "IP adress": "#2a9d8f",
+  patientID: "#ef476f",
+  job: "#3a86ff",
 };
 
 // Insert Annotation in Sorted Order with Merging
@@ -319,58 +407,9 @@ function insertAnnotationSorted(noteIndex, newAnn) {
 // Handle Label Assignment and Removal via Annotation Toolbar
 annotationToolbar.addEventListener("click", function (event) {
   if (event.target.classList.contains("label-button")) {
-    if (currentIndex < 0 || !notes[currentIndex]) {
-      alert("Please select a note before assigning a label.");
-      return;
-    }
-
     const label = event.target.textContent;
-    const color = predefinedLabels[label] || customLabels[label];
-    if (!color) {
-      alert("Label color not found.");
-      return;
-    }
-
-    const selection = window.getSelection();
-    if (selection.rangeCount > 0) {
-      const range = selection.getRangeAt(0);
-      const selectedText = selection.toString();
-      if (selectedText.trim()) {
-        const { start, end } = getSelectionIndices(range);
-
-        if (start >= 0 && end <= notes[currentIndex].length && start < end) {
-          const annotation = {
-            label: label,
-            color: color,
-            start_idx: start,
-            end_idx: end,
-            text: notes[currentIndex].substring(start, end),
-          };
-
-          if (!annotations[currentIndex]) {
-            annotations[currentIndex] = [];
-          }
-
-          insertAnnotationSorted(currentIndex, annotation);
-          renderAnnotations();
-          renderText();
-
-          const li = noteList.querySelector(`li[data-index='${currentIndex}']`);
-          if (li) {
-            li.classList.add("annotated");
-          }
-
-          selection.removeAllRanges();
-          downloadBtn.disabled = false;
-        } else {
-          alert("Invalid selection range. Please try again.");
-        }
-      } else {
-        alert("Please highlight text before assigning a label.");
-      }
-    } else {
-      alert("Please highlight text before assigning a label.");
-    }
+    setActiveLabel(label);
+    applyLabelToCurrentSelection(label, { silent: true });
   }
 
   if (event.target.classList.contains("remove-label")) {
@@ -384,6 +423,11 @@ annotationToolbar.addEventListener("click", function (event) {
     if (!confirmRemoval) return;
 
     delete customLabels[labelName];
+
+    if (activeLabel === labelName) {
+      setActiveLabel(null);
+    }
+
     labelContainer.remove();
   }
 });
@@ -426,6 +470,11 @@ addLabelButton.addEventListener("click", () => {
   customLabelColor.value = "#888888";
 
   alert(`Custom label "${labelName}" added.`);
+});
+
+textDisplay.addEventListener("mouseup", () => {
+  if (!activeLabel) return;
+  applyLabelToCurrentSelection(activeLabel, { silent: true });
 });
 
 // Get Selection Indices

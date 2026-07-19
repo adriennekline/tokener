@@ -251,19 +251,25 @@
 
       /* Annotation Toolbar */
       .annotation-toolbar {
-        margin-top: 10px;
+        margin-top: 4px;
         display: flex;
         flex-wrap: wrap;
         gap: 10px;
         max-height: 120px;
         overflow-y: auto;
+        overflow-x: visible;
+        padding-top: 10px;
+        padding-left: 6px;
         align-content: flex-start;
         padding-right: 4px;
+        position: relative;
+        z-index: 3;
       }
 
       .annotation-toolbar .label-container {
         position: relative;
         display: inline-block;
+        overflow: visible;
       }
 
       .annotation-toolbar .remove-label {
@@ -288,10 +294,37 @@
         border-radius: 5px;
         cursor: pointer;
         color: #fff;
-        transition: background-color 0.3s;
+        transition: transform 0.18s ease, box-shadow 0.22s ease,
+          filter 0.22s ease;
         font-size: 14px;
         position: relative;
         z-index: 1;
+      }
+
+      .annotation-toolbar button.label-button:hover {
+        transform: translateY(-1px);
+      }
+
+      .annotation-toolbar button.label-button.selected {
+        transform: translateY(-1px);
+        box-shadow: 0 0 0 2px #ffffff, 0 8px 18px rgba(12, 26, 44, 0.35);
+        filter: saturate(1.2) brightness(1.05);
+      }
+
+      .annotation-toolbar button.label-button.selected::after {
+        content: "ACTIVE";
+        position: absolute;
+        top: 3px;
+        right: 4px;
+        font-size: 8px;
+        letter-spacing: 0.06em;
+        font-weight: 700;
+        color: #0e2034;
+        background: #ffffff;
+        border-radius: 999px;
+        padding: 1px 5px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        z-index: 4;
       }
 
       /* Predefined Labels */
@@ -303,8 +336,32 @@
         background-color: #de6312;
       }
 
-      .LOCATION {
+      .HOSPITAL {
         background-color: #ffcc00;
+        color: #333;
+      }
+
+      .EMAIL_ADDRESS {
+        background-color: #7c6df2;
+      }
+
+      .IP_ADRESS {
+        background-color: #2a9d8f;
+      }
+
+      .PATIENT_ID {
+        background-color: #ef476f;
+      }
+
+      .JOB {
+        background-color: #3a86ff;
+      }
+
+      .HOSPITAL,
+      .EMAIL_ADDRESS,
+      .IP_ADRESS,
+      .PATIENT_ID,
+      .JOB {
         color: #333;
       }
 
@@ -317,7 +374,7 @@
         border-radius: 8px;
         display: flex;
         flex-direction: column;
-        overflow: hidden;
+        overflow: visible;
         border: 1px solid rgba(255, 255, 255, 0.2);
         backdrop-filter: blur(6px);
       }
@@ -664,9 +721,13 @@
       <div class="sidebar-right">
         <!-- Annotation Toolbar (Label List) -->
         <div class="annotation-toolbar" id="annotationToolbar">
-          <button class="label-button DATE">DATE</button>
-          <button class="label-button NAME">NAME</button>
-          <button class="label-button LOCATION">LOCATION</button>
+          <button class="label-button DATE">date</button>
+          <button class="label-button NAME">name</button>
+          <button class="label-button HOSPITAL">hospital</button>
+          <button class="label-button EMAIL_ADDRESS">email address</button>
+          <button class="label-button IP_ADRESS">IP adress</button>
+          <button class="label-button PATIENT_ID">patientID</button>
+          <button class="label-button JOB">job</button>
           <!-- Custom labels will be appended here -->
         </div>
 
@@ -739,6 +800,7 @@
       let annotations = {};
       let currentIndex = -1;
       let customLabels = {};
+      let activeLabel = null;
       const ANNOTATION_PREVIEW_MAX_LENGTH = 60;
 
       // Utility Functions
@@ -922,6 +984,89 @@
         return `${safeBase}${extension}`;
       }
 
+      function getLabelColor(label) {
+        return predefinedLabels[label] || customLabels[label] || null;
+      }
+
+      function setActiveLabel(label) {
+        activeLabel = label;
+        annotationToolbar.querySelectorAll(".label-button").forEach((button) => {
+          button.classList.toggle("selected", button.textContent === label);
+        });
+      }
+
+      function isRangeInsideTextDisplay(range) {
+        let node = range.commonAncestorContainer;
+        if (node.nodeType === Node.TEXT_NODE) {
+          node = node.parentNode;
+        }
+        return textDisplay.contains(node);
+      }
+
+      function applyLabelToCurrentSelection(label, options = {}) {
+        const { silent = false } = options;
+
+        if (currentIndex < 0 || !notes[currentIndex]) {
+          if (!silent) alert("Please select a note before assigning a label.");
+          return false;
+        }
+
+        const color = getLabelColor(label);
+        if (!color) {
+          if (!silent) alert("Label color not found.");
+          return false;
+        }
+
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0) {
+          if (!silent) alert("Please highlight text before assigning a label.");
+          return false;
+        }
+
+        const range = selection.getRangeAt(0);
+        if (!isRangeInsideTextDisplay(range)) {
+          if (!silent) alert("Please highlight text inside the note area.");
+          return false;
+        }
+
+        const selectedText = selection.toString();
+        if (!selectedText.trim()) {
+          if (!silent) alert("Please highlight text before assigning a label.");
+          return false;
+        }
+
+        const { start, end } = getSelectionIndices(range);
+        if (!(start >= 0 && end <= notes[currentIndex].length && start < end)) {
+          if (!silent) alert("Invalid selection range. Please try again.");
+          return false;
+        }
+
+        const annotation = {
+          label,
+          color,
+          start_idx: start,
+          end_idx: end,
+          text: notes[currentIndex].substring(start, end),
+        };
+
+        if (!annotations[currentIndex]) {
+          annotations[currentIndex] = [];
+        }
+
+        insertAnnotationSorted(currentIndex, annotation);
+        renderAnnotations();
+        renderText();
+
+        const li = noteList.querySelector(`li[data-index='${currentIndex}']`);
+        if (li) {
+          li.classList.add("annotated");
+        }
+
+        selection.removeAllRanges();
+        downloadBtn.disabled = false;
+        return true;
+      }
+
       // File Upload Handler
       fileInput.addEventListener("change", function (event) {
         handleSelectedFiles(event.target.files);
@@ -1055,9 +1200,13 @@
 
       // Predefined Labels and Their Colors
       const predefinedLabels = {
-        DATE: "#4ecdc4",
-        NAME: "#de6312",
-        LOCATION: "#ffcc00",
+        date: "#4ecdc4",
+        name: "#de6312",
+        hospital: "#ffcc00",
+        "email address": "#7c6df2",
+        "IP adress": "#2a9d8f",
+        patientID: "#ef476f",
+        job: "#3a86ff",
       };
 
       // Insert Annotation in Sorted Order with Merging
@@ -1142,68 +1291,9 @@
       annotationToolbar.addEventListener("click", function (event) {
         // Handle label assignment
         if (event.target.classList.contains("label-button")) {
-          if (currentIndex < 0 || !notes[currentIndex]) {
-            alert("Please select a note before assigning a label.");
-            return;
-          }
-
           const label = event.target.textContent;
-          const color = predefinedLabels[label] || customLabels[label];
-          if (!color) {
-            alert("Label color not found.");
-            return;
-          }
-
-          const selection = window.getSelection();
-          if (selection.rangeCount > 0) {
-            const range = selection.getRangeAt(0);
-            const selectedText = selection.toString();
-            if (selectedText.trim()) {
-              const { start, end } = getSelectionIndices(range);
-
-              // Validate selection range
-              if (
-                start >= 0 &&
-                end <= notes[currentIndex].length &&
-                start < end
-              ) {
-                const annotation = {
-                  label: label,
-                  color: color,
-                  start_idx: start,
-                  end_idx: end,
-                  text: notes[currentIndex].substring(start, end),
-                };
-
-                if (!annotations[currentIndex]) {
-                  annotations[currentIndex] = [];
-                }
-
-                // Insert annotation with merging
-                insertAnnotationSorted(currentIndex, annotation);
-                renderAnnotations();
-                renderText();
-
-                // Mark note as annotated
-                const li = noteList.querySelector(
-                  `li[data-index='${currentIndex}']`
-                );
-                if (li) {
-                  li.classList.add("annotated");
-                }
-
-                // Clear selection
-                selection.removeAllRanges();
-                downloadBtn.disabled = false;
-              } else {
-                alert("Invalid selection range. Please try again.");
-              }
-            } else {
-              alert("Please highlight text before assigning a label.");
-            }
-          } else {
-            alert("Please highlight text before assigning a label.");
-          }
+          setActiveLabel(label);
+          applyLabelToCurrentSelection(label, { silent: true });
         }
 
         // Handle label removal
@@ -1220,6 +1310,10 @@
 
           // Remove from customLabels
           delete customLabels[labelName];
+
+          if (activeLabel === labelName) {
+            setActiveLabel(null);
+          }
 
           // Remove the label container from the toolbar
           labelContainer.remove();
@@ -1281,6 +1375,11 @@
 
         // Inform the user that the label was added
         alert(`Custom label "${labelName}" added.`);
+      });
+
+      textDisplay.addEventListener("mouseup", () => {
+        if (!activeLabel) return;
+        applyLabelToCurrentSelection(activeLabel, { silent: true });
       });
 
       // Get Selection Indices

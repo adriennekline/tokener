@@ -243,19 +243,25 @@ h1 {
 
 /* Annotation Toolbar */
 .annotation-toolbar {
-  margin-top: 10px;
+  margin-top: 4px;
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
   max-height: 120px;
   overflow-y: auto;
+  overflow-x: visible;
+  padding-top: 10px;
+  padding-left: 6px;
   align-content: flex-start;
   padding-right: 4px;
+  position: relative;
+  z-index: 3;
 }
 
 .annotation-toolbar .label-container {
   position: relative;
   display: inline-block;
+  overflow: visible;
 }
 
 .annotation-toolbar .remove-label {
@@ -280,23 +286,73 @@ h1 {
   border-radius: 5px;
   cursor: pointer;
   color: #fff;
-  transition: background-color 0.3s;
+  transition: transform 0.18s ease, box-shadow 0.22s ease, filter 0.22s ease;
   font-size: 14px;
   position: relative;
   z-index: 1;
 }
 
+.annotation-toolbar button.label-button:hover {
+  transform: translateY(-1px);
+}
+
+.annotation-toolbar button.label-button.selected {
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 2px #ffffff, 0 8px 18px rgba(12, 26, 44, 0.35);
+  filter: saturate(1.2) brightness(1.05);
+}
+
+.annotation-toolbar button.label-button.selected::after {
+  content: "ACTIVE";
+  position: absolute;
+  top: 3px;
+  right: 4px;
+  font-size: 8px;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  color: #0e2034;
+  background: #ffffff;
+  border-radius: 999px;
+  padding: 1px 5px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  z-index: 4;
+}
+
 /* Predefined Labels */
-.Date {
+.DATE {
   background-color: #4ecdc4;
 }
 
-.Name {
+.NAME {
   background-color: #de6312;
 }
 
-.Location {
+.HOSPITAL {
   background-color: #ffcc00;
+  color: #333;
+}
+
+.EMAIL_ADDRESS {
+  background-color: #7c6df2;
+}
+
+.IP_ADRESS {
+  background-color: #2a9d8f;
+}
+
+.PATIENT_ID {
+  background-color: #ef476f;
+}
+
+.JOB {
+  background-color: #3a86ff;
+}
+
+.HOSPITAL,
+.EMAIL_ADDRESS,
+.IP_ADRESS,
+.PATIENT_ID,
+.JOB {
   color: #333;
 }
 
@@ -309,7 +365,7 @@ h1 {
   border-radius: 8px;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: visible;
   border: 1px solid rgba(255, 255, 255, 0.2);
   backdrop-filter: blur(6px);
 }
