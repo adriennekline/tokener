@@ -398,6 +398,46 @@
         background-color: #7d93c8;
       }
 
+      .med {
+        background-color: #5bb6a9;
+      }
+
+      .med_route {
+        background-color: #6c8cf0;
+      }
+
+      .med_dosage {
+        background-color: #f08f6c;
+      }
+
+      .med_status {
+        background-color: #b57ad9;
+      }
+
+      .GCS {
+        background-color: #5d99d4;
+      }
+
+      .med_freq {
+        background-color: #5ec4a3;
+      }
+
+      .vital_sign {
+        background-color: #6d8de3;
+      }
+
+      .allergy {
+        background-color: #e58a6d;
+      }
+
+      .lab_value {
+        background-color: #9a79d8;
+      }
+
+      .lab_unit {
+        background-color: #4d9fcc;
+      }
+
       .IDENTIFICATION_\# {
         background-color: #8f6de8;
       }
@@ -895,23 +935,33 @@
         <div class="annotation-toolbar" id="annotationToolbar">
           <button class="label-button ADDRESS">ADDRESS</button>
           <button class="label-button AGE">AGE</button>
+          <button class="label-button allergy">allergy</button>
           <button class="label-button CREDIT_CARD">CREDIT_CARD</button>
           <button class="label-button DATE">DATE</button>
           <button class="label-button EMAIL">EMAIL</button>
+          <button class="label-button GCS">GCS</button>
           <button class="label-button GPS">GPS</button>
           <button class="label-button HOSPITAL">HOSPITAL</button>
           <button class="label-button IBAN">IBAN</button>
+          <button class="label-button IDENTIFICATION_#">IDENTIFICATION_#</button>
           <button class="label-button IP">IP</button>
           <button class="label-button JOB">JOB</button>
+          <button class="label-button lab_unit">lab_unit</button>
+          <button class="label-button lab_value">lab_value</button>
           <button class="label-button LICENSE_PLATE">LICENSE_PLATE</button>
           <button class="label-button MAC">MAC</button>
+          <button class="label-button med">med</button>
+          <button class="label-button med_dosage">med_dosage</button>
+          <button class="label-button med_freq">med_freq</button>
+          <button class="label-button med_route">med_route</button>
+          <button class="label-button med_status">med_status</button>
           <button class="label-button NAME">NAME</button>
           <button class="label-button ORG">ORG</button>
-          <button class="label-button IDENTIFICATION_#">IDENTIFICATION_#</button>
           <button class="label-button PHONE">PHONE</button>
           <button class="label-button SEX">SEX</button>
           <button class="label-button SSN">SSN</button>
           <button class="label-button URL">URL</button>
+          <button class="label-button vital_sign">vital_sign</button>
           <!-- Custom labels will be appended here -->
         </div>
 
@@ -1414,23 +1464,33 @@
       const predefinedLabels = {
         ADDRESS: "#ffd166",
         AGE: "#6f9bff",
+        allergy: "#e58a6d",
         CREDIT_CARD: "#ff7f66",
         DATE: "#f7a64a",
         EMAIL: "#22c7b8",
+        GCS: "#5d99d4",
         GPS: "#39d98a",
         HOSPITAL: "#8bcf95",
         IBAN: "#1ecbb4",
+        "IDENTIFICATION_#": "#8f6de8",
         IP: "#4da3ff",
         JOB: "#9a7bff",
+        lab_unit: "#4d9fcc",
+        lab_value: "#9a79d8",
         LICENSE_PLATE: "#c9996b",
         MAC: "#57b9ba",
+        med: "#5bb6a9",
+        med_dosage: "#f08f6c",
+        med_freq: "#5ec4a3",
+        med_route: "#6c8cf0",
+        med_status: "#b57ad9",
         NAME: "#ff8a4c",
         ORG: "#7d93c8",
-        "IDENTIFICATION_#": "#8f6de8",
         PHONE: "#3aa6cc",
         SEX: "#d785d3",
         SSN: "#ff6f91",
         URL: "#3f8cff",
+        vital_sign: "#6d8de3",
       };
 
       // Insert Annotation in Sorted Order with Merging

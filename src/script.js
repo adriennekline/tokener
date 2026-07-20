@@ -368,16 +368,25 @@ function updateNavigationButtons() {
 const predefinedLabels = {
   ADDRESS: "#ffd166",
   AGE: "#6f9bff",
+  allergy: "#e58a6d",
   CREDIT_CARD: "#ff7f66",
   DATE: "#f7a64a",
   EMAIL: "#22c7b8",
+  GCS: "#5d99d4",
   GPS: "#39d98a",
   HOSPITAL: "#8bcf95",
   IBAN: "#1ecbb4",
   IP: "#4da3ff",
   JOB: "#9a7bff",
+  lab_unit: "#4d9fcc",
+  lab_value: "#9a79d8",
   LICENSE_PLATE: "#c9996b",
   MAC: "#57b9ba",
+  med: "#5bb6a9",
+  med_dosage: "#f08f6c",
+  med_freq: "#5ec4a3",
+  med_route: "#6c8cf0",
+  med_status: "#b57ad9",
   NAME: "#ff8a4c",
   ORG: "#7d93c8",
   PATIENT_ID: "#8f6de8",
@@ -385,6 +394,7 @@ const predefinedLabels = {
   SEX: "#d785d3",
   SSN: "#ff6f91",
   URL: "#3f8cff",
+  vital_sign: "#6d8de3",
 };
 
 // Insert Annotation in Sorted Order with Merging

@@ -375,6 +375,46 @@ h1 {
   background-color: #7d93c8;
 }
 
+.med {
+  background-color: #5bb6a9;
+}
+
+.med_route {
+  background-color: #6c8cf0;
+}
+
+.med_dosage {
+  background-color: #f08f6c;
+}
+
+.med_status {
+  background-color: #b57ad9;
+}
+
+.GCS {
+  background-color: #5d99d4;
+}
+
+.med_freq {
+  background-color: #5ec4a3;
+}
+
+.vital_sign {
+  background-color: #6d8de3;
+}
+
+.allergy {
+  background-color: #e58a6d;
+}
+
+.lab_value {
+  background-color: #9a79d8;
+}
+
+.lab_unit {
+  background-color: #4d9fcc;
+}
+
 .PATIENT_ID {
   background-color: #8f6de8;
 }
