@@ -665,6 +665,12 @@
         outline-offset: 1px;
       }
 
+      .annotation.hover-highlighted {
+        outline: 2px solid #c084fc;
+        outline-offset: 1px;
+        box-shadow: 0 0 0 3px rgba(192, 132, 252, 0.2);
+      }
+
       .annotation span {
         flex: 1;
         margin-right: 10px;
@@ -1097,6 +1103,7 @@
       let lastLabelJump = null;
       let selectedAnnotation = null;
       let lastHoveredAnnotationKey = null;
+      let hoveredAnnotationRow = null;
       const ANNOTATION_PREVIEW_MAX_LENGTH = 60;
 
       // Utility Functions
@@ -1752,9 +1759,18 @@
         flashAnnotationRow(row);
       }
 
+      function clearHoverHighlight() {
+        if (hoveredAnnotationRow) {
+          hoveredAnnotationRow.classList.remove("hover-highlighted");
+          hoveredAnnotationRow = null;
+        }
+      }
+
       function focusAnnotationFromHoverTarget(target) {
         const highlight = target.closest(".highlight");
         if (!highlight || !textDisplay.contains(highlight)) {
+          clearHoverHighlight();
+          lastHoveredAnnotationKey = null;
           return;
         }
 
@@ -1771,11 +1787,16 @@
           return;
         }
 
+        clearHoverHighlight();
         lastHoveredAnnotationKey = hoverKey;
         const row = annotationsDiv.querySelector(
           `[data-note-index='${currentIndex}'][data-annotation-index='${annotationIndex}']`
         );
-        flashAnnotationRow(row);
+        if (row) {
+          row.classList.add("hover-highlighted");
+          hoveredAnnotationRow = row;
+          row.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
       }
 
       // Predefined Labels and Their Colors
@@ -2015,6 +2036,7 @@
       });
 
       textDisplay.addEventListener("mouseleave", () => {
+        clearHoverHighlight();
         lastHoveredAnnotationKey = null;
       });
 
