@@ -808,6 +808,27 @@ textDisplay.addEventListener("mouseleave", () => {
   lastHoveredAnnotationKey = null;
 });
 
+textDisplay.addEventListener("click", (event) => {
+  const labelChip = event.target.closest(".highlight-chip");
+  if (!labelChip) {
+    return;
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
+
+  const annotationIndex = parseInt(labelChip.getAttribute("data-annotation-index"), 10);
+  if (Number.isNaN(annotationIndex) || currentIndex < 0) {
+    return;
+  }
+
+  setSelectedAnnotationRow(currentIndex, annotationIndex);
+  const row = annotationsDiv.querySelector(
+    `[data-note-index='${currentIndex}'][data-annotation-index='${annotationIndex}']`
+  );
+  flashAnnotationRow(row);
+});
+
 if (labelSearchInput) {
   labelSearchInput.addEventListener("input", (event) => {
     filterLabelButtons(event.target.value);
@@ -1007,7 +1028,7 @@ function renderText() {
           const highlightClass = isSelectedAnnotation
             ? "highlight active-annotation-highlight"
             : "highlight";
-          nestedSegment = `<span class="${highlightClass}" data-label="${escapeHtml(activeAnn.label)}" data-annotation-index="${annotationIndex}" style="background-color: ${activeAnn.color}; color: ${getContrastYIQ(activeAnn.color)};" title="${escapeHtml(activeAnn.label)}">${nestedSegment}</span>`;
+          nestedSegment = `<span class="${highlightClass}" data-label="${escapeHtml(activeAnn.label)}" data-annotation-index="${annotationIndex}" style="background-color: ${activeAnn.color}; color: ${getContrastYIQ(activeAnn.color)};" title="${escapeHtml(activeAnn.label)}"><button class="highlight-chip" type="button" data-label="${escapeHtml(activeAnn.label)}" data-annotation-index="${annotationIndex}" aria-label="Jump to ${escapeHtml(activeAnn.label)} annotation"></button>${nestedSegment}</span>`;
         });
         result += nestedSegment;
       }
@@ -1038,7 +1059,7 @@ function renderText() {
         const highlightClass = isSelectedAnnotation
           ? "highlight active-annotation-highlight"
           : "highlight";
-        nestedSegment = `<span class="${highlightClass}" data-label="${escapeHtml(activeAnn.label)}" data-annotation-index="${annotationIndex}" style="background-color: ${activeAnn.color}; color: ${getContrastYIQ(activeAnn.color)};" title="${escapeHtml(activeAnn.label)}">${nestedSegment}</span>`;
+        nestedSegment = `<span class="${highlightClass}" data-label="${escapeHtml(activeAnn.label)}" data-annotation-index="${annotationIndex}" style="background-color: ${activeAnn.color}; color: ${getContrastYIQ(activeAnn.color)};" title="${escapeHtml(activeAnn.label)}"><button class="highlight-chip" type="button" data-label="${escapeHtml(activeAnn.label)}" data-annotation-index="${annotationIndex}" aria-label="Jump to ${escapeHtml(activeAnn.label)} annotation"></button>${nestedSegment}</span>`;
       });
       result += nestedSegment;
     }

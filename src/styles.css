@@ -218,7 +218,7 @@ h1 {
 
 #text-display {
   flex: 1;
-  padding: 15px;
+  padding: 30px 15px 15px;
   border: 1px solid #ccc;
   border-radius: 5px;
   overflow-y: auto;
@@ -246,11 +246,35 @@ h1 {
   opacity: 1;
 }
 
-#text-display .highlight::before {
-  content: attr(data-label);
+#text-display .highlight-chip {
   position: absolute;
-  top: -1.45em;
+  top: 0;
   left: 0;
+  transform: translateY(calc(-100% - 1px));
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  line-height: 1;
+  appearance: none;
+  -webkit-appearance: none;
+  font-size: 0;
+  color: transparent;
+  overflow: visible;
+  width: auto;
+  height: auto;
+  min-width: 0;
+  min-height: 0;
+  box-shadow: none;
+  z-index: 6;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+#text-display .highlight-chip::before {
+  content: attr(data-label);
+  display: block;
+  text-indent: 0;
   font-size: 10px;
   line-height: 1;
   padding: 2px 5px;
@@ -258,9 +282,11 @@ h1 {
   background: #111;
   color: #fff;
   white-space: nowrap;
-  pointer-events: none;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
-  z-index: 6;
+}
+
+#text-display .highlight-chip:hover::before {
+  background: #000;
 }
 
 /* Annotation Toolbar */
