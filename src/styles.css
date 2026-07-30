@@ -241,6 +241,11 @@ h1 {
   position: relative;
 }
 
+#text-display .highlight.active-annotation-highlight {
+  box-shadow: inset 0 0 0 1px #000;
+  opacity: 1;
+}
+
 /* Annotation Toolbar */
 .annotation-toolbar {
   margin-top: 0;

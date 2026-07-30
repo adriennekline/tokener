@@ -25,6 +25,9 @@ let annotations = {};
 let currentIndex = -1;
 let customLabels = {};
 let activeLabel = null;
+let lastLabelJump = null;
+let selectedAnnotation = null;
+let lastHoveredAnnotationKey = null;
 const ANNOTATION_PREVIEW_MAX_LENGTH = 60;
 
 // Utility Functions
@@ -93,11 +96,18 @@ function getLabelColor(label) {
 function setActiveLabel(label) {
   activeLabel = label;
   annotationToolbar.querySelectorAll(".label-button").forEach((button) => {
-    button.classList.toggle("selected", button.textContent === label);
+    const isActive = button.textContent === label;
+    button.classList.toggle("selected", isActive);
+    button.style.outline = isActive ? "2px solid #000" : "";
+    button.style.outlineOffset = isActive ? "2px" : "";
   });
 
   if (activeLabelName) {
     activeLabelName.textContent = label || "None";
+  }
+
+  if (currentIndex >= 0) {
+    renderText();
   }
 }
 
@@ -338,6 +348,7 @@ function truncateText(text, maxLength) {
 // Select a Note
 function selectNote(index) {
   currentIndex = index;
+  selectedAnnotation = null;
   rowIndicator.textContent = `Note ${currentIndex + 1} of ${notes.length}`;
   highlightActiveNote();
   renderAnnotations();
@@ -362,6 +373,245 @@ function highlightActiveNote() {
 function updateNavigationButtons() {
   prevBtn.disabled = currentIndex <= 0;
   nextBtn.disabled = currentIndex >= notes.length - 1;
+}
+
+function createTextRangeFromOffsets(container, start, end) {
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null);
+  let currentNode = walker.nextNode();
+  let offset = 0;
+  let startNode = null;
+  let endNode = null;
+  let startOffset = 0;
+  let endOffset = 0;
+
+  while (currentNode) {
+    const nextOffset = offset + currentNode.textContent.length;
+
+    if (!startNode && start >= offset && start <= nextOffset) {
+      startNode = currentNode;
+      startOffset = start - offset;
+    }
+
+    if (!endNode && end >= offset && end <= nextOffset) {
+      endNode = currentNode;
+      endOffset = end - offset;
+    }
+
+    if (startNode && endNode) {
+      break;
+    }
+
+    offset = nextOffset;
+    currentNode = walker.nextNode();
+  }
+
+  if (!startNode || !endNode) {
+    return null;
+  }
+
+  const range = document.createRange();
+  range.setStart(startNode, startOffset);
+  range.setEnd(endNode, endOffset);
+  return range;
+}
+
+function flashAnnotationRow(annotationEl) {
+  if (!annotationEl) return;
+
+  const previousOutline = annotationEl.style.outline;
+  const previousShadow = annotationEl.style.boxShadow;
+  annotationEl.style.outline = "2px solid #2f74bd";
+  annotationEl.style.boxShadow = "0 0 0 3px rgba(47, 116, 189, 0.2)";
+  annotationEl.scrollIntoView({ behavior: "smooth", block: "center" });
+
+  setTimeout(() => {
+    annotationEl.style.outline = previousOutline;
+    annotationEl.style.boxShadow = previousShadow;
+  }, 900);
+}
+
+function focusAnnotation(noteIndex, annotationIndex) {
+  const noteAnnotations = annotations[noteIndex] || [];
+  const annotation = noteAnnotations[annotationIndex];
+  if (!annotation) {
+    return false;
+  }
+
+  if (currentIndex !== noteIndex) {
+    selectNote(noteIndex);
+  }
+
+  const row = annotationsDiv.querySelector(
+    `[data-note-index='${noteIndex}'][data-annotation-index='${annotationIndex}']`
+  );
+  setSelectedAnnotationRow(noteIndex, annotationIndex);
+  flashAnnotationRow(row);
+
+  const range = createTextRangeFromOffsets(
+    textDisplay,
+    annotation.start_idx,
+    annotation.end_idx
+  );
+  if (!range) {
+    return true;
+  }
+
+  const selection = window.getSelection();
+  selection.removeAllRanges();
+  selection.addRange(range);
+
+  const rect = range.getBoundingClientRect();
+  const containerRect = textDisplay.getBoundingClientRect();
+  const offsetTop = rect.top - containerRect.top;
+  textDisplay.scrollTop += offsetTop - textDisplay.clientHeight * 0.35;
+  return true;
+}
+
+function jumpToNextAnnotationByLabel(label) {
+  const matches = [];
+
+  for (let noteIndex = 0; noteIndex < notes.length; noteIndex++) {
+    const noteAnnotations = annotations[noteIndex] || [];
+    noteAnnotations.forEach((annotation, annotationIndex) => {
+      if (annotation.label === label) {
+        matches.push({ noteIndex, annotationIndex });
+      }
+    });
+  }
+
+  if (matches.length === 0) {
+    alert(`No annotations found for label "${label}".`);
+    return;
+  }
+
+  let targetIdx = 0;
+
+  if (lastLabelJump && lastLabelJump.label === label) {
+    const previousIdx = matches.findIndex(
+      (match) =>
+        match.noteIndex === lastLabelJump.noteIndex &&
+        match.annotationIndex === lastLabelJump.annotationIndex
+    );
+
+    targetIdx = previousIdx >= 0 ? (previousIdx + 1) % matches.length : 0;
+  } else if (currentIndex >= 0) {
+    const firstInOrAfterCurrent = matches.findIndex(
+      (match) => match.noteIndex >= currentIndex
+    );
+    targetIdx = firstInOrAfterCurrent >= 0 ? firstInOrAfterCurrent : 0;
+  }
+
+  const target = matches[targetIdx];
+  lastLabelJump = { label, ...target };
+  focusAnnotation(target.noteIndex, target.annotationIndex);
+}
+
+function setSelectedAnnotationRow(noteIndex, annotationIndex) {
+  selectedAnnotation = { noteIndex, annotationIndex };
+
+  Array.from(annotationsDiv.querySelectorAll(".annotation")).forEach((row) => {
+    const rowNote = parseInt(row.getAttribute("data-note-index"), 10);
+    const rowAnn = parseInt(row.getAttribute("data-annotation-index"), 10);
+    const isSelected = rowNote === noteIndex && rowAnn === annotationIndex;
+
+    row.classList.toggle("selected", isSelected);
+    row.style.outline = isSelected ? "2px solid #000" : "";
+    row.style.outlineOffset = isSelected ? "1px" : "";
+  });
+
+  const annotation = (annotations[noteIndex] || [])[annotationIndex];
+  if (annotation) {
+    setActiveLabel(annotation.label);
+  }
+}
+
+function findBestMatchingAnnotationIndex(noteIndex, start, end) {
+  const noteAnnotations = annotations[noteIndex] || [];
+  if (noteAnnotations.length === 0) {
+    return -1;
+  }
+
+  const containing = [];
+  noteAnnotations.forEach((annotation, index) => {
+    if (annotation.start_idx <= start && annotation.end_idx >= end) {
+      containing.push({ index, span: annotation.end_idx - annotation.start_idx });
+    }
+  });
+
+  if (containing.length > 0) {
+    containing.sort((a, b) => a.span - b.span);
+    return containing[0].index;
+  }
+
+  const overlapping = [];
+  noteAnnotations.forEach((annotation, index) => {
+    const overlaps = annotation.start_idx < end && annotation.end_idx > start;
+    if (overlaps) {
+      overlapping.push({ index, span: annotation.end_idx - annotation.start_idx });
+    }
+  });
+
+  if (overlapping.length === 0) {
+    return -1;
+  }
+
+  overlapping.sort((a, b) => a.span - b.span);
+  return overlapping[0].index;
+}
+
+function focusAnnotationFromTextSelection() {
+  if (currentIndex < 0) {
+    return;
+  }
+
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0) {
+    return;
+  }
+
+  const range = selection.getRangeAt(0);
+  if (!isRangeInsideTextDisplay(range)) {
+    return;
+  }
+
+  const { start, end } = getSelectionIndices(range);
+  if (!(start >= 0 && end > start)) {
+    return;
+  }
+
+  const annotationIndex = findBestMatchingAnnotationIndex(currentIndex, start, end);
+  if (annotationIndex < 0) {
+    return;
+  }
+
+  const row = annotationsDiv.querySelector(
+    `[data-note-index='${currentIndex}'][data-annotation-index='${annotationIndex}']`
+  );
+  setSelectedAnnotationRow(currentIndex, annotationIndex);
+  flashAnnotationRow(row);
+}
+
+function focusAnnotationFromHoverTarget(target) {
+  const highlight = target.closest(".highlight");
+  if (!highlight || !textDisplay.contains(highlight)) {
+    return;
+  }
+
+  const annotationIndex = parseInt(highlight.getAttribute("data-annotation-index"), 10);
+  if (Number.isNaN(annotationIndex) || currentIndex < 0) {
+    return;
+  }
+
+  const hoverKey = `${currentIndex}:${annotationIndex}`;
+  if (hoverKey === lastHoveredAnnotationKey) {
+    return;
+  }
+
+  lastHoveredAnnotationKey = hoverKey;
+  const row = annotationsDiv.querySelector(
+    `[data-note-index='${currentIndex}'][data-annotation-index='${annotationIndex}']`
+  );
+  flashAnnotationRow(row);
 }
 
 // Predefined Labels and Their Colors
@@ -456,6 +706,12 @@ function insertAnnotationSorted(noteIndex, newAnn) {
 annotationToolbar.addEventListener("click", function (event) {
   if (event.target.classList.contains("label-button")) {
     const label = event.target.textContent;
+
+    if (activeLabel === label) {
+      setActiveLabel(null);
+      return;
+    }
+
     setActiveLabel(label);
     applyLabelToCurrentSelection(label, { silent: true });
   }
@@ -478,6 +734,17 @@ annotationToolbar.addEventListener("click", function (event) {
 
     labelContainer.remove();
   }
+});
+
+annotationToolbar.addEventListener("dblclick", function (event) {
+  if (!event.target.classList.contains("label-button")) {
+    return;
+  }
+
+  event.preventDefault();
+  const label = event.target.textContent;
+  setActiveLabel(label);
+  jumpToNextAnnotationByLabel(label);
 });
 
 // Handle Adding Custom Labels
@@ -529,6 +796,18 @@ textDisplay.addEventListener("mouseup", () => {
   applyLabelToCurrentSelection(activeLabel, { silent: true });
 });
 
+textDisplay.addEventListener("dblclick", () => {
+  focusAnnotationFromTextSelection();
+});
+
+textDisplay.addEventListener("mouseover", (event) => {
+  focusAnnotationFromHoverTarget(event.target);
+});
+
+textDisplay.addEventListener("mouseleave", () => {
+  lastHoveredAnnotationKey = null;
+});
+
 if (labelSearchInput) {
   labelSearchInput.addEventListener("input", (event) => {
     filterLabelButtons(event.target.value);
@@ -556,6 +835,8 @@ function renderAnnotations() {
   annotations[currentIndex].forEach((annotation, index) => {
     const annotationDiv = document.createElement("div");
     annotationDiv.classList.add("annotation");
+    annotationDiv.setAttribute("data-note-index", currentIndex);
+    annotationDiv.setAttribute("data-annotation-index", index);
 
     const textLabelDiv = document.createElement("div");
     textLabelDiv.style.display = "inline-flex";
@@ -571,6 +852,7 @@ function renderAnnotations() {
     labelSpan.textContent = annotation.label;
     labelSpan.style.color = annotation.color;
     labelSpan.style.fontWeight = "bold";
+    labelSpan.classList.add("annotation-label");
 
     textLabelDiv.appendChild(textSpan);
     textLabelDiv.appendChild(labelSpan);
@@ -583,6 +865,16 @@ function renderAnnotations() {
     annotationDiv.appendChild(textLabelDiv);
     annotationDiv.appendChild(removeBtn);
     annotationsDiv.appendChild(annotationDiv);
+
+    if (
+      selectedAnnotation &&
+      selectedAnnotation.noteIndex === currentIndex &&
+      selectedAnnotation.annotationIndex === index
+    ) {
+      annotationDiv.classList.add("selected");
+      annotationDiv.style.outline = "2px solid #000";
+      annotationDiv.style.outlineOffset = "1px";
+    }
   });
 }
 
@@ -595,13 +887,57 @@ annotationsDiv.addEventListener("click", (event) => {
     const noteIdx = parseInt(event.target.getAttribute("data-note-index"), 10);
     const annIdx = parseInt(event.target.getAttribute("data-annotation-index"), 10);
     removeAnnotation(noteIdx, annIdx);
+    return;
   }
+
+  const annotationElement = event.target.closest(".annotation");
+  if (!annotationElement) {
+    return;
+  }
+
+  const noteIdx = parseInt(annotationElement.getAttribute("data-note-index"), 10);
+  const annIdx = parseInt(annotationElement.getAttribute("data-annotation-index"), 10);
+  setSelectedAnnotationRow(noteIdx, annIdx);
+});
+
+annotationsDiv.addEventListener("dblclick", (event) => {
+  const annotationElement = event.target.closest(".annotation");
+  if (!annotationElement) {
+    return;
+  }
+
+  if (
+    event.target.tagName.toLowerCase() === "button" &&
+    event.target.textContent === "Remove"
+  ) {
+    return;
+  }
+
+  const noteIdx = parseInt(annotationElement.getAttribute("data-note-index"), 10);
+  const annIdx = parseInt(annotationElement.getAttribute("data-annotation-index"), 10);
+  setSelectedAnnotationRow(noteIdx, annIdx);
+  focusAnnotation(noteIdx, annIdx);
 });
 
 // Remove Annotation Function
 function removeAnnotation(noteIndex, annotationIndex) {
   if (annotations[noteIndex] && annotations[noteIndex].length > annotationIndex) {
     annotations[noteIndex].splice(annotationIndex, 1);
+
+    if (
+      selectedAnnotation &&
+      selectedAnnotation.noteIndex === noteIndex &&
+      selectedAnnotation.annotationIndex === annotationIndex
+    ) {
+      selectedAnnotation = null;
+    } else if (
+      selectedAnnotation &&
+      selectedAnnotation.noteIndex === noteIndex &&
+      selectedAnnotation.annotationIndex > annotationIndex
+    ) {
+      selectedAnnotation.annotationIndex -= 1;
+    }
+
     renderAnnotations();
     renderText();
 
@@ -663,7 +999,15 @@ function renderText() {
       } else {
         let nestedSegment = segment;
         activeAnnotations.forEach((activeAnn) => {
-          nestedSegment = `<span class="highlight" style="background-color: ${activeAnn.color}; color: ${getContrastYIQ(activeAnn.color)};" title="${escapeHtml(activeAnn.label)}">${nestedSegment}</span>`;
+          const annotationIndex = sortedAnnotations.indexOf(activeAnn);
+          const isSelectedAnnotation =
+            selectedAnnotation &&
+            selectedAnnotation.noteIndex === currentIndex &&
+            selectedAnnotation.annotationIndex === annotationIndex;
+          const highlightClass = isSelectedAnnotation
+            ? "highlight active-annotation-highlight"
+            : "highlight";
+          nestedSegment = `<span class="${highlightClass}" data-label="${escapeHtml(activeAnn.label)}" data-annotation-index="${annotationIndex}" style="background-color: ${activeAnn.color}; color: ${getContrastYIQ(activeAnn.color)};" title="${escapeHtml(activeAnn.label)}">${nestedSegment}</span>`;
         });
         result += nestedSegment;
       }
@@ -686,7 +1030,15 @@ function renderText() {
     } else {
       let nestedSegment = segment;
       activeAnnotations.forEach((activeAnn) => {
-        nestedSegment = `<span class="highlight" style="background-color: ${activeAnn.color}; color: ${getContrastYIQ(activeAnn.color)};" title="${escapeHtml(activeAnn.label)}">${nestedSegment}</span>`;
+        const annotationIndex = sortedAnnotations.indexOf(activeAnn);
+        const isSelectedAnnotation =
+          selectedAnnotation &&
+          selectedAnnotation.noteIndex === currentIndex &&
+          selectedAnnotation.annotationIndex === annotationIndex;
+        const highlightClass = isSelectedAnnotation
+          ? "highlight active-annotation-highlight"
+          : "highlight";
+        nestedSegment = `<span class="${highlightClass}" data-label="${escapeHtml(activeAnn.label)}" data-annotation-index="${annotationIndex}" style="background-color: ${activeAnn.color}; color: ${getContrastYIQ(activeAnn.color)};" title="${escapeHtml(activeAnn.label)}">${nestedSegment}</span>`;
       });
       result += nestedSegment;
     }
