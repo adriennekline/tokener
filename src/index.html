@@ -2057,6 +2057,22 @@
           return;
         }
 
+        // Toggle deselect if clicking the already-selected chip
+        if (
+          selectedAnnotation &&
+          selectedAnnotation.noteIndex === currentIndex &&
+          selectedAnnotation.annotationIndex === annotationIndex
+        ) {
+          selectedAnnotation = null;
+          Array.from(annotationsDiv.querySelectorAll(".annotation")).forEach((row) => {
+            row.classList.remove("selected");
+            row.style.outline = "";
+            row.style.outlineOffset = "";
+          });
+          renderText();
+          return;
+        }
+
         setSelectedAnnotationRow(currentIndex, annotationIndex);
         const row = annotationsDiv.querySelector(
           `[data-note-index='${currentIndex}'][data-annotation-index='${annotationIndex}']`
