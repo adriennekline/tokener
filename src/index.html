@@ -2077,7 +2077,7 @@
         const row = annotationsDiv.querySelector(
           `[data-note-index='${currentIndex}'][data-annotation-index='${annotationIndex}']`
         );
-        flashAnnotationRow(row);
+        if (row) row.scrollIntoView({ behavior: "smooth", block: "nearest" });
       });
 
       if (labelSearchInput) {
