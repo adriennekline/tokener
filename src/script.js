@@ -14,6 +14,8 @@ const customLabelName = document.getElementById("custom-label-name");
 const customLabelColor = document.getElementById("custom-label-color");
 const annotationsDiv = document.getElementById("annotations");
 const filenameInput = document.getElementById("filename-input");
+const exportFormat = document.getElementById("export-format");
+const clearBtn = document.getElementById("clearBtn");
 const activeLabelName = document.getElementById("active-label-name");
 const labelSearchInput = document.getElementById("label-search");
 
@@ -29,6 +31,8 @@ let lastLabelJump = null;
 let selectedAnnotation = null;
 let lastHoveredAnnotationKey = null;
 const ANNOTATION_PREVIEW_MAX_LENGTH = 60;
+const STORAGE_KEY = "tokener.state.v1";
+const ALLOWED_EXPORT_FORMATS = ["spans", "bio"];
 
 // Utility Functions
 function getContrastYIQ(hexcolor) {
@@ -83,6 +87,147 @@ function getNoteTitleFromFile(file) {
   return file && file.name ? file.name : "Untitled note";
 }
 
+function createCustomLabelElement(labelName, labelColor) {
+  const labelContainer = document.createElement("div");
+  labelContainer.classList.add("label-container");
+
+  const button = document.createElement("button");
+  button.classList.add("label-button");
+  button.textContent = labelName;
+  button.style.backgroundColor = labelColor;
+  button.style.color = getContrastYIQ(labelColor);
+
+  const removeSpan = document.createElement("span");
+  removeSpan.classList.add("remove-label");
+  removeSpan.textContent = "x";
+
+  labelContainer.appendChild(button);
+  labelContainer.appendChild(removeSpan);
+  return labelContainer;
+}
+
+function renderCustomLabels() {
+  annotationToolbar
+    .querySelectorAll(".label-container")
+    .forEach((node) => node.remove());
+
+  Object.entries(customLabels).forEach(([labelName, labelColor]) => {
+    annotationToolbar.appendChild(createCustomLabelElement(labelName, labelColor));
+  });
+}
+
+function saveStateToCache() {
+  try {
+    const state = {
+      originalNotes,
+      notes,
+      noteTitles,
+      annotations,
+      currentIndex,
+      customLabels,
+      activeLabel,
+      filename: filenameInput ? filenameInput.value : "",
+      exportFormat: exportFormat ? exportFormat.value : "spans",
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch (error) {
+    console.warn("Unable to save state to browser cache.", error);
+  }
+}
+
+function clearStateFromCache() {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch (error) {
+    console.warn("Unable to clear cached state.", error);
+  }
+}
+
+function restoreStateFromCache() {
+  try {
+    const rawState = localStorage.getItem(STORAGE_KEY);
+    if (!rawState) return;
+
+    const parsedState = JSON.parse(rawState);
+    if (!parsedState || typeof parsedState !== "object") return;
+
+    originalNotes = Array.isArray(parsedState.originalNotes)
+      ? parsedState.originalNotes
+      : [];
+    notes = Array.isArray(parsedState.notes) ? parsedState.notes : [];
+    noteTitles = Array.isArray(parsedState.noteTitles) ? parsedState.noteTitles : [];
+    annotations =
+      parsedState.annotations && typeof parsedState.annotations === "object"
+        ? parsedState.annotations
+        : {};
+    customLabels =
+      parsedState.customLabels && typeof parsedState.customLabels === "object"
+        ? parsedState.customLabels
+        : {};
+
+    renderCustomLabels();
+    displayNotes();
+
+    if (filenameInput && typeof parsedState.filename === "string") {
+      filenameInput.value = parsedState.filename;
+    }
+
+    if (exportFormat && ALLOWED_EXPORT_FORMATS.includes(parsedState.exportFormat)) {
+      exportFormat.value = parsedState.exportFormat;
+    }
+
+    if (notes.length > 0) {
+      const restoredIndex = Number.isInteger(parsedState.currentIndex)
+        ? Math.min(Math.max(parsedState.currentIndex, 0), notes.length - 1)
+        : 0;
+      selectNote(restoredIndex);
+    } else {
+      currentIndex = -1;
+      renderAnnotations();
+      renderText();
+      updateNavigationButtons();
+    }
+
+    const restoredActiveLabel =
+      typeof parsedState.activeLabel === "string" ? parsedState.activeLabel : null;
+    setActiveLabel(
+      restoredActiveLabel && getLabelColor(restoredActiveLabel)
+        ? restoredActiveLabel
+        : null
+    );
+  } catch (error) {
+    console.warn("Unable to restore cached state.", error);
+  }
+}
+
+function clearWorkspaceAndCache() {
+  const confirmClear = confirm(
+    "Clear loaded notes, annotations, custom labels, and browser cache?"
+  );
+  if (!confirmClear) {
+    return;
+  }
+
+  resetData(false);
+  customLabels = {};
+  renderCustomLabels();
+  setActiveLabel(null);
+  selectedAnnotation = null;
+  lastLabelJump = null;
+  lastHoveredAnnotationKey = null;
+
+  if (labelSearchInput) {
+    labelSearchInput.value = "";
+    filterLabelButtons("");
+  }
+
+  if (exportFormat) {
+    exportFormat.value = "spans";
+  }
+
+  clearStateFromCache();
+}
+
 function normalizeFilename(name, defaultBase, extension) {
   const trimmed = (name || "").trim();
   const safeBase = trimmed.replace(/\.(json|zip)$/i, "") || defaultBase;
@@ -109,6 +254,8 @@ function setActiveLabel(label) {
   if (currentIndex >= 0) {
     renderText();
   }
+
+  saveStateToCache();
 }
 
 function filterLabelButtons(rawQuery) {
@@ -200,6 +347,7 @@ function applyLabelToCurrentSelection(label, options = {}) {
 
   selection.removeAllRanges();
   downloadBtn.disabled = false;
+  saveStateToCache();
   return true;
 }
 
@@ -212,7 +360,7 @@ async function handleSelectedFiles(fileList) {
     return;
   }
 
-  resetData();
+  resetData(false);
 
   for (const file of supportedFiles) {
     try {
@@ -242,7 +390,9 @@ async function handleSelectedFiles(fileList) {
 
   if (notes.length > 0) {
     displayNotes();
+    saveStateToCache();
   } else {
+    saveStateToCache();
     alert("No readable content found in the selected files.");
   }
 }
@@ -279,7 +429,7 @@ if (dropZone) {
 
 // Parse CSV File
 function parseCSV(data) {
-  resetData();
+  resetData(false);
 
   const lines = data.split(/\r\n|\n/).filter((line) => line.trim() !== "");
   lines.forEach((line) => {
@@ -289,26 +439,30 @@ function parseCSV(data) {
 
   if (notes.length > 0) {
     displayNotes();
+    saveStateToCache();
   } else {
+    saveStateToCache();
     alert("The CSV file is empty.");
   }
 }
 
 // Parse Text File
 function parseText(data) {
-  resetData();
+  resetData(false);
   const cleanedText = data.trim();
   if (cleanedText.length > 0) {
     originalNotes.push(cleanedText);
     notes.push(cleanedText);
     displayNotes();
+    saveStateToCache();
   } else {
+    saveStateToCache();
     alert("The Text file is empty.");
   }
 }
 
 // Reset Data
-function resetData() {
+function resetData(shouldPersist = true) {
   originalNotes = [];
   notes = [];
   noteTitles = [];
@@ -321,6 +475,10 @@ function resetData() {
   nextBtn.disabled = true;
   downloadBtn.disabled = true;
   filenameInput.value = "";
+
+  if (shouldPersist) {
+    saveStateToCache();
+  }
 }
 
 // Display Notes in Sidebar
@@ -357,6 +515,7 @@ function selectNote(index) {
   downloadBtn.disabled = !(
     annotations[currentIndex] && annotations[currentIndex].length > 0
   );
+  saveStateToCache();
 }
 
 // Highlight Active Note in Sidebar
@@ -733,6 +892,7 @@ annotationToolbar.addEventListener("click", function (event) {
     }
 
     labelContainer.remove();
+    saveStateToCache();
   }
 });
 
@@ -764,22 +924,7 @@ addLabelButton.addEventListener("click", () => {
 
   customLabels[labelName] = labelColor;
 
-  const labelContainer = document.createElement("div");
-  labelContainer.classList.add("label-container");
-
-  const button = document.createElement("button");
-  button.classList.add("label-button");
-  button.textContent = labelName;
-  button.style.backgroundColor = labelColor;
-  button.style.color = getContrastYIQ(labelColor);
-
-  const removeSpan = document.createElement("span");
-  removeSpan.classList.add("remove-label");
-  removeSpan.textContent = "x";
-
-  labelContainer.appendChild(button);
-  labelContainer.appendChild(removeSpan);
-  annotationToolbar.appendChild(labelContainer);
+  annotationToolbar.appendChild(createCustomLabelElement(labelName, labelColor));
 
   if (labelSearchInput) {
     filterLabelButtons(labelSearchInput.value);
@@ -787,6 +932,8 @@ addLabelButton.addEventListener("click", () => {
 
   customLabelName.value = "";
   customLabelColor.value = "#888888";
+
+  saveStateToCache();
 
   alert(`Custom label "${labelName}" added.`);
 });
@@ -972,6 +1119,8 @@ function removeAnnotation(noteIndex, annotationIndex) {
         annotations[currentIndex] && annotations[currentIndex].length > 0
       );
     }
+
+    saveStateToCache();
   } else {
     alert("Invalid annotation index.");
   }
@@ -1147,3 +1296,23 @@ nextBtn.addEventListener("click", () => {
     selectNote(currentIndex + 1);
   }
 });
+
+if (filenameInput) {
+  filenameInput.addEventListener("input", () => {
+    saveStateToCache();
+  });
+}
+
+if (exportFormat) {
+  exportFormat.addEventListener("change", () => {
+    saveStateToCache();
+  });
+}
+
+if (clearBtn) {
+  clearBtn.addEventListener("click", () => {
+    clearWorkspaceAndCache();
+  });
+}
+
+restoreStateFromCache();
