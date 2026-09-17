@@ -98,7 +98,7 @@ If you use TokeNER in your research or project, please cite it as:
 
 1. Download or clone the repository
 2. No dependencies required - pure vanilla JavaScript
-3. Open `tokener_together_logout.html` in a modern web browser
+3. Open `index.html` in a modern web browser
 
 ### Usage
 
