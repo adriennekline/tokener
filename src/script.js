@@ -83,6 +83,10 @@ function readFileContent(file) {
   });
 }
 
+function normalizeLineEndings(text) {
+  return (text || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+}
+
 function getNoteTitleFromFile(file) {
   return file && file.name ? file.name : "Untitled note";
 }
@@ -152,9 +156,11 @@ function restoreStateFromCache() {
     if (!parsedState || typeof parsedState !== "object") return;
 
     originalNotes = Array.isArray(parsedState.originalNotes)
-      ? parsedState.originalNotes
+        ? parsedState.originalNotes.map((note) => normalizeLineEndings(String(note)))
       : [];
-    notes = Array.isArray(parsedState.notes) ? parsedState.notes : [];
+    notes = Array.isArray(parsedState.notes)
+      ? parsedState.notes.map((note) => normalizeLineEndings(String(note)))
+      : [];
     noteTitles = Array.isArray(parsedState.noteTitles) ? parsedState.noteTitles : [];
     annotations =
       parsedState.annotations && typeof parsedState.annotations === "object"
@@ -365,18 +371,21 @@ async function handleSelectedFiles(fileList) {
   for (const file of supportedFiles) {
     try {
       const content = await readFileContent(file);
+      const normalizedContent = normalizeLineEndings(content);
       const fileName = file.name.toLowerCase();
       const title = getNoteTitleFromFile(file);
 
       if (fileName.endsWith(".csv")) {
-        const lines = content.split(/\r\n|\n/).filter((line) => line.trim() !== "");
+        const lines = normalizedContent
+          .split(/\n/)
+          .filter((line) => line.trim() !== "");
         lines.forEach((line) => {
           originalNotes.push(line);
           notes.push(line);
           noteTitles.push(title);
         });
       } else {
-        const cleanedText = content.trim();
+        const cleanedText = normalizedContent.trim();
         if (cleanedText.length > 0) {
           originalNotes.push(cleanedText);
           notes.push(cleanedText);
@@ -431,7 +440,9 @@ if (dropZone) {
 function parseCSV(data) {
   resetData(false);
 
-  const lines = data.split(/\r\n|\n/).filter((line) => line.trim() !== "");
+  const normalizedData = normalizeLineEndings(data);
+
+  const lines = normalizedData.split(/\n/).filter((line) => line.trim() !== "");
   lines.forEach((line) => {
     originalNotes.push(line);
     notes.push(line);
@@ -449,7 +460,7 @@ function parseCSV(data) {
 // Parse Text File
 function parseText(data) {
   resetData(false);
-  const cleanedText = data.trim();
+  const cleanedText = normalizeLineEndings(data).trim();
   if (cleanedText.length > 0) {
     originalNotes.push(cleanedText);
     notes.push(cleanedText);
