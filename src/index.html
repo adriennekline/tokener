@@ -852,6 +852,25 @@
         background-color: #d62839;
       }
 
+      .load-btn {
+        padding: 8px 12px;
+        margin-bottom: 10px;
+        border: none;
+        border-radius: 5px;
+        background-color: #f6b6c8;
+        color: #fff;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+
+      .load-btn:hover {
+        background-color: #e995ae;
+      }
+
+      #annotationsInput {
+        display: none;
+      }
+
       /* Scrollbar Styling */
       .note-list::-webkit-scrollbar,
       .annotation-toolbar::-webkit-scrollbar,
@@ -1046,6 +1065,10 @@
           />
           <label for="fileInput">Choose File</label>
           <label for="directoryInput">Choose Folder</label>
+          <input type="file" id="annotationsInput" accept=".json,.zip" />
+          <button id="loadAnnotationsBtn" class="load-btn" type="button">
+            Load Annotations
+          </button>
           <div class="drop-zone" id="dropZone">
             Drag and drop CSV/TXT files or folders here
           </div>
@@ -1211,6 +1234,8 @@
       // DOM Elements
       const fileInput = document.getElementById("fileInput");
       const directoryInput = document.getElementById("directoryInput");
+      const annotationsInput = document.getElementById("annotationsInput");
+      const loadAnnotationsBtn = document.getElementById("loadAnnotationsBtn");
       const dropZone = document.getElementById("dropZone");
       const noteList = document.getElementById("noteList");
       const rowIndicator = document.getElementById("rowIndicator");
@@ -1716,6 +1741,15 @@
         directoryInput.value = "";
       });
 
+      loadAnnotationsBtn.addEventListener("click", () => {
+        annotationsInput.click();
+      });
+
+      annotationsInput.addEventListener("change", (event) => {
+        const [file] = event.target.files;
+        if (file) loadAnnotationsFromFile(file);
+      });
+
       dropZone.addEventListener("dragover", function (event) {
         event.preventDefault();
         dropZone.classList.add("drag-over");
@@ -1786,6 +1820,171 @@
 
         if (shouldPersist) {
           saveStateToCache();
+        }
+      }
+
+      function normalizeImportedAnnotation(annotation, noteText) {
+        if (!annotation || typeof annotation !== "object") return null;
+        const label = String(annotation.label || "").trim();
+        const start = Number(annotation.start_idx);
+        const end = Number(annotation.end_idx);
+        if (!label || !Number.isInteger(start) || !Number.isInteger(end)) return null;
+
+        const safeStart = Math.max(0, Math.min(start, noteText.length));
+        const safeEnd = Math.max(safeStart, Math.min(end, noteText.length));
+        if (safeStart >= safeEnd) return null;
+
+        return {
+          label,
+          color: annotation.color || getLabelColor(label) || "#888888",
+          start_idx: safeStart,
+          end_idx: safeEnd,
+          text: noteText.substring(safeStart, safeEnd),
+        };
+      }
+
+      function annotationsFromBioEntry(entry, noteText) {
+        const sequence = Array.isArray(entry.sequence)
+          ? entry.sequence
+          : Array.isArray(entry.tokens) && Array.isArray(entry.tags)
+          ? entry.tokens.map((token, index) => ({ ...token, tag: entry.tags[index] }))
+          : [];
+        const importedAnnotations = [];
+        let active = null;
+
+        const finishActive = () => {
+          if (!active) return;
+          const annotation = normalizeImportedAnnotation(active, noteText);
+          if (annotation) importedAnnotations.push(annotation);
+          active = null;
+        };
+
+        sequence.forEach((token) => {
+          const tag = String(token.tag || "O");
+          const separatorIndex = tag.indexOf("-");
+          const prefix = separatorIndex > 0 ? tag.slice(0, separatorIndex) : tag;
+          const label = separatorIndex > 0 ? tag.slice(separatorIndex + 1) : "";
+          const start = Number(token.start_idx);
+          const end = Number(token.end_idx);
+
+          if (!label || !Number.isInteger(start) || !Number.isInteger(end)) {
+            finishActive();
+          } else if (prefix === "B" || !active || active.label !== label) {
+            finishActive();
+            active = { label, start_idx: start, end_idx: end };
+          } else if (prefix === "I") {
+            active.end_idx = end;
+          } else {
+            finishActive();
+          }
+        });
+        finishActive();
+        return importedAnnotations;
+      }
+
+      function entriesFromAnnotationPayload(payload) {
+        if (!payload || typeof payload !== "object") return [];
+
+        if (Array.isArray(payload.annotations)) {
+          const isSpanCollection = payload.annotations.some(
+            (entry) => entry && typeof entry === "object" && "note" in entry
+          );
+          if (isSpanCollection) return payload.annotations;
+          if (typeof payload.note === "string") return [payload];
+        }
+
+        if (Array.isArray(payload.notes)) {
+          return payload.notes.map((entry) => {
+            const note = entry.note || entry.text || "";
+            return {
+              ...entry,
+              note,
+              annotations: annotationsFromBioEntry(entry, note),
+            };
+          });
+        }
+
+        if (typeof payload.note === "string" || typeof payload.text === "string") {
+          const note = payload.note || payload.text;
+          return [{
+            ...payload,
+            note,
+            annotations:
+              payload.format === "BIO"
+                ? annotationsFromBioEntry(payload, note)
+                : payload.annotations || [],
+          }];
+        }
+        return [];
+      }
+
+      async function readAnnotationPayload(file) {
+        if (file.name.toLowerCase().endsWith(".zip")) {
+          if (typeof JSZip === "undefined") {
+            throw new Error("ZIP support is unavailable because JSZip did not load.");
+          }
+          const zip = await JSZip.loadAsync(file);
+          const entries = [];
+          for (const zipEntry of Object.values(zip.files)) {
+            if (zipEntry.dir || !zipEntry.name.toLowerCase().endsWith(".json")) continue;
+            entries.push(...entriesFromAnnotationPayload(JSON.parse(await zipEntry.async("text"))));
+          }
+          return entries;
+        }
+        return entriesFromAnnotationPayload(JSON.parse(await readFileContent(file)));
+      }
+
+      async function loadAnnotationsFromFile(file) {
+        try {
+          const entries = await readAnnotationPayload(file);
+          if (entries.length === 0) throw new Error("No annotated notes were found in that file.");
+
+          const normalizedEntries = entries.map((entry, position) => {
+            const note = normalizeLineEndings(String(entry.note || entry.text || ""));
+            const parsedIndex = Number(entry.note_index);
+            const noteIndex = Number.isInteger(parsedIndex) ? Math.max(0, parsedIndex) : position;
+            return {
+              note,
+              noteIndex,
+              annotations: (entry.annotations || [])
+                .map((annotation) => normalizeImportedAnnotation(annotation, note))
+                .filter(Boolean),
+            };
+          }).filter((entry) => entry.note.length > 0);
+
+          if (normalizedEntries.length === 0) {
+            throw new Error("The annotation file did not contain readable note text.");
+          }
+
+          normalizedEntries.forEach((entry) => {
+            entry.annotations.forEach((annotation) => {
+              if (!predefinedLabels[annotation.label] && !customLabels[annotation.label]) {
+                customLabels[annotation.label] = annotation.color;
+              }
+            });
+          });
+          renderCustomLabels();
+
+          const noteCount = Math.max(...normalizedEntries.map((entry) => entry.noteIndex + 1));
+          originalNotes = Array(noteCount).fill("");
+          notes = Array(noteCount).fill("");
+          noteTitles = Array.from({ length: noteCount }, (_, index) => `Note ${index + 1}`);
+          annotations = {};
+
+          normalizedEntries.forEach((entry) => {
+            originalNotes[entry.noteIndex] = entry.note;
+            notes[entry.noteIndex] = entry.note;
+            annotations[entry.noteIndex] = entry.annotations;
+          });
+
+          displayNotes();
+          selectNote(normalizedEntries[0].noteIndex);
+          saveStateToCache();
+        } catch (error) {
+          console.error("Unable to load annotations.", error);
+          alert(`Unable to load annotations: ${error.message}`);
+        } finally {
+          annotationsInput.value = "";
         }
       }
 
