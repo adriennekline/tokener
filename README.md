@@ -51,10 +51,11 @@ If you use TokeNER in your research or project, please cite it as:
 
 ### Label Management
 
-- **Predefined Labels**: Three built-in label categories:
+- **Predefined Labels**: Built-in label categories including:
   - **Date** (Turquoise: `#4ecdc4`)
   - **Name** (Orange: `#de6312`)
   - **Location** (Yellow: `#ffcc00`)
+  - **Strength**, **Reason**, **Duration**, and **Form**
 - **Custom Labels**: Create unlimited custom labels with:
   - Custom name
   - Custom color picker

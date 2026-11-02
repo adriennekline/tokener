@@ -455,6 +455,22 @@ h1 {
   background-color: #e58a6d;
 }
 
+.strength {
+  background-color: #d97706;
+}
+
+.reason {
+  background-color: #0f766e;
+}
+
+.duration {
+  background-color: #2563eb;
+}
+
+.form {
+  background-color: #9333ea;
+}
+
 .lab_value {
   background-color: #9a79d8;
 }

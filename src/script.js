@@ -819,6 +819,10 @@ const predefinedLabels = {
   SSN: "#ff6f91",
   URL: "#3f8cff",
   vital_sign: "#6d8de3",
+  strength: "#d97706",
+  reason: "#0f766e",
+  duration: "#2563eb",
+  form: "#9333ea",
 };
 
 // Insert Annotation in Sorted Order with Merging
