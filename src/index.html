@@ -253,6 +253,11 @@
         min-height: 0;
       }
 
+      /* Add visual breathing room without changing annotation character offsets. */
+      #text-display .visualization-content {
+        line-height: 2;
+      }
+
       /* Highlight Class */
       #text-display .highlight {
         padding: 2px 4px;
@@ -2909,7 +2914,9 @@
           !annotations[currentIndex] ||
           annotations[currentIndex].length === 0
         ) {
-          textDisplay.innerHTML = escapeHtml(text);
+          textDisplay.innerHTML = `<span class="visualization-content">${escapeHtml(
+            text
+          )}</span>`;
           return;
         }
 
@@ -3015,7 +3022,7 @@
           }
         }
 
-        textDisplay.innerHTML = result;
+        textDisplay.innerHTML = `<span class="visualization-content">${result}</span>`;
       }
 
       // Handle Download Annotations

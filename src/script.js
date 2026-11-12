@@ -1154,7 +1154,9 @@ function renderText() {
   }
 
   if (!annotations[currentIndex] || annotations[currentIndex].length === 0) {
-    textDisplay.innerHTML = escapeHtml(text);
+    textDisplay.innerHTML = `<span class="visualization-content">${escapeHtml(
+      text
+    )}</span>`;
     return;
   }
 
@@ -1233,7 +1235,7 @@ function renderText() {
     }
   }
 
-  textDisplay.innerHTML = result;
+  textDisplay.innerHTML = `<span class="visualization-content">${result}</span>`;
 }
 
 // Handle Download Annotations
